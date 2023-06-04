@@ -8,12 +8,15 @@ import (
 
 type MockKeeper interface {
 	storages.MetricRepository
-	GetCounter(metricName string) int64
-	GetGauge(metricName string) float64
 }
 
 type MockMemStorage struct {
 	mem *MemStorage
+}
+
+func (mm *MockMemStorage) GetMetrics() map[string]string {
+	return nil
+
 }
 
 func NewMockMemStorage() MockKeeper {
@@ -26,11 +29,11 @@ func (mm *MockMemStorage) SetGauge(metricName string, value float64) {
 	mm.mem.SetGauge(metricName, value)
 }
 
-func (mm *MockMemStorage) GetCounter(metricName string) int64 {
-	return mm.mem.storeCounter[metricName] // todo:error if metricName doesn't exist
+func (mm *MockMemStorage) GetCounter(metricName string) (int64, error) {
+	return mm.mem.storeCounter[metricName], nil // todo:error if metricName doesn't exist
 }
-func (mm *MockMemStorage) GetGauge(metricName string) float64 {
-	return mm.mem.storeGauge[metricName]
+func (mm *MockMemStorage) GetGauge(metricName string) (float64, error) {
+	return mm.mem.storeGauge[metricName], nil
 }
 
 func TestMemStorage_AddCounter(t *testing.T) {
@@ -63,8 +66,9 @@ func TestMemStorage_AddCounter(t *testing.T) {
 			for _, val := range tc.values {
 				storage.AddCounter(tc.metricName, val)
 			}
-			got := storage.GetCounter(tc.metricName)
+			got, err := storage.GetCounter(tc.metricName)
 			req.EqualValues(tc.want, got)
+			req.NoError(err)
 
 		})
 	}
@@ -100,8 +104,9 @@ func TestMemStorage_SetGauge(t *testing.T) {
 			for _, val := range tc.values {
 				storage.SetGauge(tc.metricName, val)
 			}
-			got := storage.GetGauge(tc.metricName)
+			got, err := storage.GetGauge(tc.metricName)
 			req.EqualValues(tc.want, got)
+			req.NoError(err)
 
 		})
 	}

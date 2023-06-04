@@ -1,8 +1,9 @@
 package handlers
 
-import "net/http"
+import (
+	"github.com/go-chi/chi/v5"
+)
 
 type ExecuteHandler interface {
-	Register(server *http.ServeMux)
-	GetParams(urlPath string) map[string]string
+	Register(server *chi.Mux)
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/antoniokichaev/go-alert-me/internal/services/server/handlers"
 	"github.com/antoniokichaev/go-alert-me/internal/storages"
+	"github.com/go-chi/chi/v5"
 	"net/http"
-	"regexp"
 )
 
 const (
@@ -15,9 +15,8 @@ const (
 	//При попытке передать запрос с некорректным типом метрики или значением возвращать http.StatusBadRequest.
 	_incorrectMetricType  = http.StatusBadRequest
 	_incorrectMetricValue = http.StatusBadRequest
+	_contentTypeText      = "text/plain; charset=utf-8"
 )
-
-var validPath = regexp.MustCompile(`\/update\/(?P<MetricType>\w+)\/(?P<MetricName>\w+)\/(?P<MetricValue>.*)`)
 
 type handlerMetric struct {
 	repo storages.MetricRepository
@@ -30,8 +29,16 @@ func newHandlerMetrics(store storages.MetricRepository) *handlerMetric {
 	return &handlerMetric{repo: store}
 }
 
-func (h *handlerMetric) Register(router *http.ServeMux) {
-	router.HandleFunc("/update/", h.updateMetrics)
+func (h *handlerMetric) Register(router *chi.Mux) {
+	_ = func(statusCode int) func(http.ResponseWriter, *http.Request) {
+		return func(writer http.ResponseWriter, request *http.Request) {
+			writer.WriteHeader(statusCode)
+		}
+	}
+	router.Route("/update", func(r chi.Router) {
+		r.Post(fmt.Sprintf("/{%s}/{%s}/{%s}", _metricType, _metricName, _metricValue), h.updateMetrics)
+	})
+
 }
 
 // HandlerCounter принимает запрос ввида /update/{counter|gauge}/someMetric/527
@@ -41,19 +48,10 @@ func (h *handlerMetric) updateMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("income request", r.URL.Path)
-
-	err := r.ParseForm()
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	params := h.GetParams(r.URL.Path)
-	metricType := params[_metricType]
-	metricName := params[_metricName]
-	metricValue := params[_metricValue]
-	err = isValidMetricAndMetricName(metricType, metricName)
+	metricType := chi.URLParam(r, _metricType)
+	metricName := chi.URLParam(r, _metricName)
+	metricValue := chi.URLParam(r, _metricValue)
+	err := isValidMetricAndMetricName(metricType, metricName)
 	if err != nil {
 		if errors.Is(err, ErrorName) {
 			w.WriteHeader(_zeroMetricName)
@@ -84,19 +82,7 @@ func (h *handlerMetric) updateMetrics(w http.ResponseWriter, r *http.Request) {
 		h.repo.AddCounter(counter.name, counter.value)
 
 	}
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
-}
-
-// GetParams Парсит строку вида /update/{metricType}/{metricName}/{value}
-// на выход получаем map params
-func (h *handlerMetric) GetParams(urlPath string) map[string]string {
-	names := validPath.SubexpNames()
-	a := validPath.FindStringSubmatch(urlPath)
-	mp := make(map[string]string, len(a))
-	for key := range a {
-		mp[names[key]] = a[key]
-	}
-	return mp
 }
