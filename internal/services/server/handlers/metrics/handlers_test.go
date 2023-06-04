@@ -106,7 +106,8 @@ func TestUpdateMetrics(t *testing.T) {
 
 			request := resty.New().R()
 			request.Method = tc.method
-			u, _ := url.JoinPath(srv.URL, tc.targetURL)
+			u, err := url.JoinPath(srv.URL, tc.targetURL)
+			assert.NoError(t, err)
 			request.URL = u
 			response, err := request.Send()
 			assert.NoError(t, err)
