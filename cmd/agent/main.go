@@ -6,13 +6,13 @@ import (
 )
 
 func main() {
-	pollIntervalMillis := time.Second * 2
-	reportItervalMillis := time.Second * 10
+	pollInterval := time.Second * 2
+	reportIterval := time.Second * 10
 
 	agent := client.NewAgentMetric(
 		"",
-		reportItervalMillis,
-		pollIntervalMillis,
+		reportIterval,
+		pollInterval,
 	)
 	agent.Run()
 }
