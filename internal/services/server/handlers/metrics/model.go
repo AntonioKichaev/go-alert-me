@@ -11,6 +11,9 @@ type MetricType string
 const (
 	_counterName MetricType = "counter"
 	_gaugeName   MetricType = "gauge"
+	_metricType             = "MetricType"
+	_metricName             = "MetricName"
+	_metricValue            = "MetricValue"
 )
 
 var _allowedMetricsName = [...]string{"gauge", "counter"}

@@ -7,7 +7,7 @@ import (
 )
 
 type MockKeeper interface {
-	storages.Keeper
+	storages.MetricRepository
 	GetCounter(metricName string) int64
 	GetGauge(metricName string) float64
 }
@@ -55,6 +55,7 @@ func TestMemStorage_AddCounter(t *testing.T) {
 			want:       5,
 		},
 	}
+
 	req := require.New(t)
 	for key, tc := range tt {
 		t.Run(key, func(t *testing.T) {

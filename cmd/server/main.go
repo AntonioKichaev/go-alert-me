@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/antoniokichaev/go-alert-me/internal/metrics"
+	"github.com/antoniokichaev/go-alert-me/internal/services/server/handlers/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/storages/memstorage"
 	"net/http"
 )

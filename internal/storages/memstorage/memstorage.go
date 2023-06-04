@@ -9,7 +9,7 @@ type MemStorage struct {
 	storeGauge   map[string]float64
 }
 
-func NewMemStorage() storages.Keeper {
+func NewMemStorage() storages.MetricRepository {
 	return newMemStorage()
 }
 func newMemStorage() *MemStorage {

@@ -2,10 +2,11 @@ package metrics
 
 import (
 	"errors"
-	"github.com/antoniokichaev/go-alert-me/internal/handlers"
+	"fmt"
+	"github.com/antoniokichaev/go-alert-me/internal/services/server/handlers"
 	"github.com/antoniokichaev/go-alert-me/internal/storages"
 	"net/http"
-	"strings"
+	"regexp"
 )
 
 const (
@@ -16,24 +17,31 @@ const (
 	_incorrectMetricValue = http.StatusBadRequest
 )
 
-type handlerCouter struct {
-	store storages.Keeper
+var validPath = regexp.MustCompile(`\/update\/(?P<MetricType>\w+)\/(?P<MetricName>\w+)\/(?P<MetricValue>.*)`)
+
+type handlerMetric struct {
+	repo storages.MetricRepository
 }
 
-func NewHandlerMetrics(store storages.Keeper) handlers.ExecuteHandler {
-	return &handlerCouter{store: store}
+func NewHandlerMetrics(store storages.MetricRepository) handlers.ExecuteHandler {
+	return newHandlerMetrics(store)
+}
+func newHandlerMetrics(store storages.MetricRepository) *handlerMetric {
+	return &handlerMetric{repo: store}
 }
 
-func (h *handlerCouter) Register(router *http.ServeMux) {
+func (h *handlerMetric) Register(router *http.ServeMux) {
 	router.HandleFunc("/update/", h.updateMetrics)
 }
 
 // HandlerCounter принимает запрос ввида /update/{counter|gauge}/someMetric/527
-func (h *handlerCouter) updateMetrics(w http.ResponseWriter, r *http.Request) {
+func (h *handlerMetric) updateMetrics(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+
+	fmt.Println("income request", r.URL.Path)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -41,7 +49,10 @@ func (h *handlerCouter) updateMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metricType, metricName, value := parseDataFromString(r.URL.Path)
+	params := h.GetParams(r.URL.Path)
+	metricType := params[_metricType]
+	metricName := params[_metricName]
+	metricValue := params[_metricValue]
 	err = isValidMetricAndMetricName(metricType, metricName)
 	if err != nil {
 		if errors.Is(err, ErrorName) {
@@ -58,19 +69,19 @@ func (h *handlerCouter) updateMetrics(w http.ResponseWriter, r *http.Request) {
 
 	switch MetricType(metricType) {
 	case _gaugeName:
-		gauge, err := newGauge(metricName, value)
+		gauge, err := newGauge(metricName, metricValue)
 		if err != nil {
 			w.WriteHeader(_incorrectMetricValue)
 			return
 		}
-		h.store.SetGauge(gauge.name, gauge.value)
+		h.repo.SetGauge(gauge.name, gauge.value)
 	case _counterName:
-		counter, err := newCounter(metricName, value)
+		counter, err := newCounter(metricName, metricValue)
 		if err != nil {
 			w.WriteHeader(_incorrectMetricValue)
 			return
 		}
-		h.store.AddCounter(counter.name, counter.value)
+		h.repo.AddCounter(counter.name, counter.value)
 
 	}
 	w.Header().Set("Content-Type", "text/plain")
@@ -79,21 +90,12 @@ func (h *handlerCouter) updateMetrics(w http.ResponseWriter, r *http.Request) {
 }
 
 // parseDataFromString Парсит строку вида /update/{metricType}/{metricName}/{value}
-func parseDataFromString(s string) (string, string, string) {
-
-	key := 2
-	// "/update/{metricType}/{metricName}/{value}
-	//"[0]/[1]/[2]			/[3]/		 /[4]
-	splitS := strings.Split(s, "/")
-	result := func() string {
-		if key > len(splitS)-1 {
-			return ""
-		}
-		res := splitS[key]
-		key++
-		return res
-
+func (h *handlerMetric) GetParams(urlPath string) map[string]string {
+	names := validPath.SubexpNames()
+	a := validPath.FindStringSubmatch(urlPath)
+	mp := make(map[string]string, len(a))
+	for key, _ := range a {
+		mp[names[key]] = a[key]
 	}
-
-	return result(), result(), strings.ReplaceAll(result(), ",", ".")
+	return mp
 }
