@@ -26,11 +26,13 @@ func (lm *LineMan) Delivery(data map[string]string) error {
 		if err != nil {
 			return err
 		}
-		_, err = lm.httpclient.Do(request)
+		resp, err := lm.httpclient.Do(request)
+
 		if err != nil {
 			// server isn't available
 			return err
 		}
+		resp.Body.Close()
 
 	}
 	return nil

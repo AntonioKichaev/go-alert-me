@@ -20,14 +20,14 @@ func TestUpdateMetrics(t *testing.T) {
 	}
 	tt := map[string]struct {
 		method      string
-		targetUrl   string
+		targetURL   string
 		statusCode  int
 		contentType string
 		mockStore   mockStoreRequest
 	}{
 		"add counter ": {
 			method:    http.MethodPost,
-			targetUrl: "/update/counter/1/2",
+			targetURL: "/update/counter/1/2",
 
 			statusCode:  http.StatusOK,
 			contentType: _contentTypeText,
@@ -35,55 +35,55 @@ func TestUpdateMetrics(t *testing.T) {
 		},
 		"zero_value ": {
 			method:      http.MethodPost,
-			targetUrl:   "/update/counter/1/",
+			targetURL:   "/update/counter/1/",
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
 		},
 		"zero_metrics ": {
 			method:      http.MethodPost,
-			targetUrl:   "/update/counter//5",
+			targetURL:   "/update/counter//5",
 			statusCode:  http.StatusNotFound,
 			contentType: "",
 			mockStore:   mockStoreRequest{},
 		},
 		"unknown_metric_type ": {
 			method:      http.MethodPost,
-			targetUrl:   "/update/xep/er/5",
+			targetURL:   "/update/xep/er/5",
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
 			mockStore:   mockStoreRequest{},
 		},
 		"unk ": {
 			method:      http.MethodPost,
-			targetUrl:   "/update/",
+			targetURL:   "/update/",
 			statusCode:  http.StatusNotFound,
 			contentType: "",
 			mockStore:   mockStoreRequest{methodName: _addCounter},
 		},
 		"negative_value ": {
 			method:      http.MethodPost,
-			targetUrl:   "/update/counter/ram/-5",
+			targetURL:   "/update/counter/ram/-5",
 			statusCode:  http.StatusOK,
 			contentType: _contentTypeText,
 			mockStore:   mockStoreRequest{methodName: _addCounter, args: []any{"ram", int64(-5)}},
 		},
 		"negative_float_value ": {
 			method:      http.MethodPost,
-			targetUrl:   "/update/counter/ram/-5.5",
+			targetURL:   "/update/counter/ram/-5.5",
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
 			mockStore:   mockStoreRequest{},
 		},
 		"simple_set_gauge ": {
 			method:      http.MethodPost,
-			targetUrl:   "/update/gauge/ram/999.5999",
+			targetURL:   "/update/gauge/ram/999.5999",
 			statusCode:  http.StatusOK,
 			contentType: _contentTypeText,
 			mockStore:   mockStoreRequest{methodName: _setGauge, args: []any{"ram", 999.5999}},
 		},
 		"none_value_set_gauge ": {
 			method:      http.MethodPost,
-			targetUrl:   "/update/gauge/ram/none",
+			targetURL:   "/update/gauge/ram/none",
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
 		},
@@ -95,12 +95,13 @@ func TestUpdateMetrics(t *testing.T) {
 				mockStore.On(tc.mockStore.methodName, tc.mockStore.args...)
 			}
 
-			request := httptest.NewRequest(tc.method, tc.targetUrl, nil)
+			request := httptest.NewRequest(tc.method, tc.targetURL, nil)
 
 			w := httptest.NewRecorder()
 			handler.updateMetrics(w, request)
 
 			response := w.Result()
+			response.Body.Close()
 			assert.Equal(t, tc.statusCode, response.StatusCode)
 			assert.Equal(t, tc.contentType, response.Header.Get("Content-Type"))
 			mockStore.AssertExpectations(t)

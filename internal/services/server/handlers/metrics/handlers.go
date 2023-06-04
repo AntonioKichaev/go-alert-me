@@ -89,12 +89,13 @@ func (h *handlerMetric) updateMetrics(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// parseDataFromString Парсит строку вида /update/{metricType}/{metricName}/{value}
+// GetParams Парсит строку вида /update/{metricType}/{metricName}/{value}
+// на выход получаем map params
 func (h *handlerMetric) GetParams(urlPath string) map[string]string {
 	names := validPath.SubexpNames()
 	a := validPath.FindStringSubmatch(urlPath)
 	mp := make(map[string]string, len(a))
-	for key, _ := range a {
+	for key := range a {
 		mp[names[key]] = a[key]
 	}
 	return mp

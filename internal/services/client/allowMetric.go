@@ -1,8 +1,5 @@
 package client
 
-var _metrics = map[string]map[string]struct{}{
-	"gauge": _allowGaugeMetric,
-}
 var _allowGaugeMetric = map[string]struct{}{
 	"Alloc":         {},
 	"BuckHashSys":   {},

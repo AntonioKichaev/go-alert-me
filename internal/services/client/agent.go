@@ -19,24 +19,24 @@ type Agent interface {
 }
 
 type agentBond struct {
-	pollIntervalMillis   time.Duration
-	reportIntervalMillis time.Duration
-	now                  func() time.Time
-	name                 string
-	metricsState         map[string]string
-	delivery             DeliveryMan
-	grabber              Grabber
+	pollInterval   time.Duration
+	reportInterval time.Duration
+	now            func() time.Time
+	name           string
+	metricsState   map[string]string
+	delivery       DeliveryMan
+	grabber        Grabber
 }
 
-func NewAgentMetric(name string, reportIntervalMillis, pollIntervalMillis time.Duration) Agent {
+func NewAgentMetric(name string, reportInterval, pollInterval time.Duration) Agent {
 	return &agentBond{
-		name:                 name,
-		pollIntervalMillis:   pollIntervalMillis,
-		reportIntervalMillis: reportIntervalMillis,
-		grabber:              NewRacoon(),
-		delivery:             NewLineMan(_reciver),
-		metricsState:         make(map[string]string, _metricsLenght),
-		now:                  time.Now,
+		name:           name,
+		pollInterval:   pollInterval,
+		reportInterval: reportInterval,
+		grabber:        NewRacoon(),
+		delivery:       NewLineMan(_reciver),
+		metricsState:   make(map[string]string, _metricsLenght),
+		now:            time.Now,
 	}
 }
 
@@ -46,7 +46,7 @@ func (agent *agentBond) Run() {
 	for ; isAfter; isAfter = agent.now().After(startTime) {
 		snap := agent.grabber.GetSnapshot()
 		agent.updateState(snap)
-		if agent.now().Sub(startTime) > agent.reportIntervalMillis {
+		if agent.now().Sub(startTime) > agent.reportInterval {
 
 			err := agent.delivery.Delivery(agent.metricsState)
 			agent.resetState()
@@ -56,7 +56,7 @@ func (agent *agentBond) Run() {
 			}
 
 		}
-		time.Sleep(agent.pollIntervalMillis)
+		time.Sleep(agent.pollInterval)
 
 	}
 }

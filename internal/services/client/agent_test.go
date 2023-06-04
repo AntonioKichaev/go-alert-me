@@ -20,13 +20,13 @@ func Test_agentBond_Run(t *testing.T) {
 	}
 
 	type fields struct {
-		pollIntervalMillis   time.Duration
-		reportIntervalMillis time.Duration
-		now                  func() time.Time
-		name                 string
-		metricsState         map[string]string
-		delivery             DeliveryMan
-		grabber              Grabber
+		pollInterval   time.Duration
+		reportInterval time.Duration
+		now            func() time.Time
+		name           string
+		metricsState   map[string]string
+		delivery       DeliveryMan
+		grabber        Grabber
 	}
 	tests := map[string]struct {
 		fields    fields
@@ -34,13 +34,13 @@ func Test_agentBond_Run(t *testing.T) {
 	}{
 		"check_call_delivery": {
 			fields: fields{
-				pollIntervalMillis:   time.Second * 1,
-				reportIntervalMillis: time.Second * 5,
-				now:                  now,
-				name:                 "qwe",
-				metricsState:         make(map[string]string),
-				delivery:             mockDelivery,
-				grabber:              mockGrabber,
+				pollInterval:   time.Second * 1,
+				reportInterval: time.Second * 5,
+				now:            now,
+				name:           "qwe",
+				metricsState:   make(map[string]string),
+				delivery:       mockDelivery,
+				grabber:        mockGrabber,
 			},
 			lastState: make(map[string]string),
 		},
@@ -56,13 +56,13 @@ func Test_agentBond_Run(t *testing.T) {
 				"qwe": "55",
 			}).Times(6)
 			agent := &agentBond{
-				pollIntervalMillis:   tc.fields.pollIntervalMillis,
-				reportIntervalMillis: tc.fields.reportIntervalMillis,
-				now:                  tc.fields.now,
-				name:                 tc.fields.name,
-				metricsState:         tc.fields.metricsState,
-				delivery:             tc.fields.delivery,
-				grabber:              tc.fields.grabber,
+				pollInterval:   tc.fields.pollInterval,
+				reportInterval: tc.fields.reportInterval,
+				now:            tc.fields.now,
+				name:           tc.fields.name,
+				metricsState:   tc.fields.metricsState,
+				delivery:       tc.fields.delivery,
+				grabber:        tc.fields.grabber,
 			}
 			agent.Run()
 			mockDelivery.AssertExpectations(t)
