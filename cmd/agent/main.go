@@ -11,15 +11,13 @@ func main() {
 	config.ParseFlag(agentConfig)
 	pollInterval := agentConfig.GetPollIntervalSecond()
 	reportIterval := agentConfig.GetReportIntervalSecond()
-	fmt.Println("config ", agentConfig)
-	agent, err := client.NewAgentMetric(
+
+	fmt.Println("config agent", agentConfig)
+	agent := client.NewAgentMetric(
 		client.SetName("anton"),
 		client.InitDeliveryAddress(agentConfig.GetMyServer()),
 		client.SetReportInterval(reportIterval),
 		client.SetPollInterval(pollInterval),
 	)
-	if err != nil {
-		panic(err)
-	}
 	agent.Run()
 }

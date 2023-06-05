@@ -26,72 +26,69 @@ type agentBond struct {
 	delivery       DeliveryMan
 	grabber        Grabber
 }
-type Option func(agent *agentBond) error
+type Option func(agent *agentBond)
 
 func SetName(name string) Option {
-	return func(agent *agentBond) error {
+	return func(agent *agentBond) {
 		agent.name = name
-		return nil
+
 	}
 }
 func InitDeliveryAddress(address string) Option {
-	return func(agent *agentBond) error {
+	return func(agent *agentBond) {
 		delivery, err := NewLineMan(address) //todo: чо-то с ошибкой делать
+		if err != nil {
+			panic(fmt.Errorf("InitDeliveryAddress:%w", err))
+		}
 		agent.delivery = delivery
-		return err
+
 	}
 }
 func SetReportInterval(sec int64) Option {
-	return func(agent *agentBond) error {
+	return func(agent *agentBond) {
 		agent.reportInterval = time.Duration(sec) * time.Second
-		return nil
 	}
 }
 func SetPollInterval(sec int64) Option {
-	return func(agent *agentBond) error {
+	return func(agent *agentBond) {
 		agent.pollInterval = time.Duration(sec) * time.Second
-		return nil
 	}
 }
 
 func SetGrabber() Option {
-	return func(agent *agentBond) error {
+	return func(agent *agentBond) {
 		agent.grabber = NewRacoon()
-		return nil
 	}
 }
 func SetMetricState() Option {
-	return func(agent *agentBond) error {
+	return func(agent *agentBond) {
 		agent.metricsState = make(map[string]string, _metricsLenght)
-		return nil
 	}
 }
 
 func SetFunctionGetTime(fc func() time.Time) Option {
-	return func(agent *agentBond) error {
+	return func(agent *agentBond) {
 		agent.now = fc
-		return nil
 	}
 }
-func NewAgentMetric(opts ...Option) (Agent, error) {
-	agent := &agentBond{}
-	err := SetName("rand")(agent)
-	err = SetPollInterval(2)(agent)
-	err = SetReportInterval(10)(agent)
-	err = InitDeliveryAddress("localhost:8080")(agent)
-	err = SetGrabber()(agent)
-	err = SetMetricState()(agent)
-	err = SetFunctionGetTime(time.Now)(agent)
-	if err != nil {
-		panic(fmt.Errorf("newAgentMetric: %v", err))
+func NewAgentMetric(opts ...Option) Agent {
+	const (
+		defaultName           = "bond"
+		defaultPollInterval   = 2
+		defaultReportInterval = 10
+	)
+	agent := &agentBond{
+		name:           defaultName,
+		pollInterval:   defaultPollInterval,
+		reportInterval: defaultReportInterval,
+		grabber:        NewRacoon(),
+		metricsState:   make(map[string]string, _metricsLenght),
+		now:            time.Now,
 	}
 	for _, opt := range opts {
-		err = opt(agent)
-		if err != nil {
-			panic(fmt.Errorf("newAgentMetric: %v", err))
-		}
+		opt(agent)
 	}
-	return agent, nil
+	return agent
 }
 
 func (agent *agentBond) Run() {
