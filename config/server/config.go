@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+type Option func(server *Server)
 type Server struct {
 	HttpServerAdr string `env:"ADDRESS"`
 }
@@ -14,7 +15,18 @@ func (srv *Server) GetMyAddress() string {
 func (srv *Server) String() string {
 	return fmt.Sprintf("server:(%s)", srv.HttpServerAdr)
 }
-
-func NewServerConfig() *Server {
-	return &Server{}
+func SetHttpServerAdr(adr string) Option {
+	return func(server *Server) {
+		server.HttpServerAdr = adr
+	}
+}
+func NewServerConfig(opts ...Option) *Server {
+	const defaultAdr = "localhost:8080"
+	srv := &Server{
+		HttpServerAdr: defaultAdr,
+	}
+	for _, opt := range opts {
+		opt(srv)
+	}
+	return srv
 }
