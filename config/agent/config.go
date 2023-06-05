@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"time"
 )
 
 type Agent struct {
@@ -13,11 +12,11 @@ type Agent struct {
 	pollIntervalSecond   int64
 }
 
-func (a *Agent) GetReportIntervalSecond() time.Duration {
-	return time.Duration(a.reportIntervalSecond) * time.Second
+func (a *Agent) GetReportIntervalSecond() int64 {
+	return a.reportIntervalSecond
 }
-func (a *Agent) GetPollIntervalSecond() time.Duration {
-	return time.Duration(a.pollIntervalSecond) * time.Second
+func (a *Agent) GetPollIntervalSecond() int64 {
+	return a.pollIntervalSecond
 }
 func (a *Agent) GetMyServer() string {
 	if strings.Contains(a.httpServerAdr, "localhost") {
@@ -31,5 +30,7 @@ func (a *Agent) String() string {
 }
 
 func NewAgentConfig() *Agent {
-	return &Agent{}
+	agent := &Agent{}
+
+	return agent
 }

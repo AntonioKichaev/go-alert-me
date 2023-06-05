@@ -26,21 +26,72 @@ type agentBond struct {
 	delivery       DeliveryMan
 	grabber        Grabber
 }
+type Option func(agent *agentBond) error
 
-func NewAgentMetric(name string, serverAddr string, reportInterval, pollInterval time.Duration) (Agent, error) {
-	delivery, err := NewLineMan(serverAddr)
-	if err != nil {
-		return nil, err
+func SetName(name string) Option {
+	return func(agent *agentBond) error {
+		agent.name = name
+		return nil
 	}
-	return &agentBond{
-		name:           name,
-		pollInterval:   pollInterval,
-		reportInterval: reportInterval,
-		grabber:        NewRacoon(),
-		delivery:       delivery,
-		metricsState:   make(map[string]string, _metricsLenght),
-		now:            time.Now,
-	}, nil
+}
+func InitDeliveryAddress(address string) Option {
+	return func(agent *agentBond) error {
+		delivery, err := NewLineMan(address) //todo: чо-то с ошибкой делать
+		agent.delivery = delivery
+		return err
+	}
+}
+func SetReportInterval(sec int64) Option {
+	return func(agent *agentBond) error {
+		agent.reportInterval = time.Duration(sec) * time.Second
+		return nil
+	}
+}
+func SetPollInterval(sec int64) Option {
+	return func(agent *agentBond) error {
+		agent.pollInterval = time.Duration(sec) * time.Second
+		return nil
+	}
+}
+
+func SetGrabber() Option {
+	return func(agent *agentBond) error {
+		agent.grabber = NewRacoon()
+		return nil
+	}
+}
+func SetMetricState() Option {
+	return func(agent *agentBond) error {
+		agent.metricsState = make(map[string]string, _metricsLenght)
+		return nil
+	}
+}
+
+func SetFunctionGetTime(fc func() time.Time) Option {
+	return func(agent *agentBond) error {
+		agent.now = fc
+		return nil
+	}
+}
+func NewAgentMetric(opts ...Option) (Agent, error) {
+	agent := &agentBond{}
+	err := SetName("rand")(agent)
+	err = SetPollInterval(2)(agent)
+	err = SetReportInterval(10)(agent)
+	err = InitDeliveryAddress("localhost:8080")(agent)
+	err = SetGrabber()(agent)
+	err = SetMetricState()(agent)
+	err = SetFunctionGetTime(time.Now)(agent)
+	if err != nil {
+		panic(fmt.Errorf("newAgentMetric: %v", err))
+	}
+	for _, opt := range opts {
+		err = opt(agent)
+		if err != nil {
+			panic(fmt.Errorf("newAgentMetric: %v", err))
+		}
+	}
+	return agent, nil
 }
 
 func (agent *agentBond) Run() {
