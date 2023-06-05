@@ -6,24 +6,24 @@ import (
 
 type Option func(server *Server)
 type Server struct {
-	HttpServerAdr string `env:"ADDRESS"`
+	HTTPServerAdr string `env:"ADDRESS"`
 }
 
 func (srv *Server) GetMyAddress() string {
-	return srv.HttpServerAdr
+	return srv.HTTPServerAdr
 }
 func (srv *Server) String() string {
-	return fmt.Sprintf("server:(%s)", srv.HttpServerAdr)
+	return fmt.Sprintf("server:(%s)", srv.HTTPServerAdr)
 }
 func SetHttpServerAdr(adr string) Option {
 	return func(server *Server) {
-		server.HttpServerAdr = adr
+		server.HTTPServerAdr = adr
 	}
 }
 func NewServerConfig(opts ...Option) *Server {
 	const defaultAdr = "localhost:8080"
 	srv := &Server{
-		HttpServerAdr: defaultAdr,
+		HTTPServerAdr: defaultAdr,
 	}
 	for _, opt := range opts {
 		opt(srv)
