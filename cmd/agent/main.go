@@ -1,18 +1,25 @@
 package main
 
 import (
+	"fmt"
+	"github.com/antoniokichaev/go-alert-me/config/agent"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client"
-	"time"
 )
 
 func main() {
-	pollInterval := time.Second * 2
-	reportIterval := time.Second * 10
-
-	agent := client.NewAgentMetric(
+	agentConfig := config.NewAgentConfig()
+	config.ParseFlag(agentConfig)
+	pollInterval := agentConfig.GetPollIntervalSecond()
+	reportIterval := agentConfig.GetReportIntervalSecond()
+	fmt.Println("config ", agentConfig)
+	agent, err := client.NewAgentMetric(
 		"",
+		agentConfig.GetMyServer(),
 		reportIterval,
 		pollInterval,
 	)
+	if err != nil {
+		panic(err)
+	}
 	agent.Run()
 }

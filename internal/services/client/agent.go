@@ -8,7 +8,6 @@ import (
 
 const (
 	_methodRequestSend = http.MethodPost
-	_reciver           = "http://0.0.0.0:8080/update"
 )
 
 var _metricsLenght = len(_allowGaugeMetric)
@@ -28,16 +27,20 @@ type agentBond struct {
 	grabber        Grabber
 }
 
-func NewAgentMetric(name string, reportInterval, pollInterval time.Duration) Agent {
+func NewAgentMetric(name string, serverAddr string, reportInterval, pollInterval time.Duration) (Agent, error) {
+	delivery, err := NewLineMan(serverAddr)
+	if err != nil {
+		return nil, err
+	}
 	return &agentBond{
 		name:           name,
 		pollInterval:   pollInterval,
 		reportInterval: reportInterval,
 		grabber:        NewRacoon(),
-		delivery:       NewLineMan(_reciver),
+		delivery:       delivery,
 		metricsState:   make(map[string]string, _metricsLenght),
 		now:            time.Now,
-	}
+	}, nil
 }
 
 func (agent *agentBond) Run() {

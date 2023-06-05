@@ -3,7 +3,7 @@ AGENT_PATH=./cmd/agent/agent
 AGENT_BUILD_PATH=./cmd/agent/main.go
 SERVER_BUILD_PATH=./cmd/server/main.go
 SERVER_PATH=./cmd/server/server
-
+SERVER_PORT=8081
 prepare:
 	go mod tidy
 
@@ -25,5 +25,14 @@ iter2: build_server build_client
 iter3: build_server build_client
 	metricstest -test.v -test.run=^TestIteration3[AB]*$$ \
             -source-path=./ \
-            -binary-path=$(SERVER_PATH)
+            -binary-path=$(SERVER_PATH) \
             -agent-binary-path=$(AGENT_PATH) \
+
+iter4: build_server build_client
+	metricstest -test.v -test.run=^TestIteration4$$ \
+                -agent-binary-path=cmd/agent/agent \
+                -binary-path=$(SERVER_PATH) \
+                -server-port=$(SERVER_PORT) \
+                -source-path=./
+
+all: iter1 iter2 iter3 iter4
