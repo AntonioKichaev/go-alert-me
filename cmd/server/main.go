@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/antoniokichaev/go-alert-me/config/server"
 	configSrv "github.com/antoniokichaev/go-alert-me/config/server"
 	"github.com/antoniokichaev/go-alert-me/internal/services/server/handlers/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/storages/memstorage"
@@ -11,7 +10,7 @@ import (
 )
 
 func main() {
-	serverConfig := server.NewServerConfig()
+	serverConfig := configSrv.NewServerConfig()
 	configSrv.ParseFlag(serverConfig)
 	mu := chi.NewRouter()
 	storeKeeper := memstorage.NewMemStorage()
