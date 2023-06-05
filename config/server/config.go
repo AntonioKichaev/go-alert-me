@@ -15,7 +15,7 @@ func (srv *Server) GetMyAddress() string {
 func (srv *Server) String() string {
 	return fmt.Sprintf("server:(%s)", srv.HTTPServerAdr)
 }
-func SetHttpServerAdr(adr string) Option {
+func SetHTTPServerAdr(adr string) Option {
 	return func(server *Server) {
 		server.HTTPServerAdr = adr
 	}
