@@ -12,6 +12,7 @@ import (
 func main() {
 	serverConfig := configSrv.NewServerConfig()
 	configSrv.ParseFlag(serverConfig)
+	fmt.Println("config server", serverConfig)
 	mu := chi.NewRouter()
 	storeKeeper := memstorage.NewMemStorage()
 	handlerKeeper := metrics.NewHandlerMetrics(storeKeeper)

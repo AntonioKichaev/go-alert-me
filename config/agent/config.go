@@ -7,26 +7,26 @@ import (
 )
 
 type Agent struct {
-	httpServerAdr        string
-	reportIntervalSecond int64
-	pollIntervalSecond   int64
+	HttpServerAdr        string `env:"ADDRESS"`
+	ReportIntervalSecond int64  `env:"REPORT_INTERVAL"`
+	PollIntervalSecond   int64  `env:"POLL_INTERVAL"`
 }
 
 func (a *Agent) GetReportIntervalSecond() int64 {
-	return a.reportIntervalSecond
+	return a.ReportIntervalSecond
 }
 func (a *Agent) GetPollIntervalSecond() int64 {
-	return a.pollIntervalSecond
+	return a.PollIntervalSecond
 }
 func (a *Agent) GetMyServer() string {
-	if strings.Contains(a.httpServerAdr, "localhost") {
-		result, _ := url.JoinPath("http://", a.httpServerAdr)
+	if strings.Contains(a.HttpServerAdr, "localhost") {
+		result, _ := url.JoinPath("http://", a.HttpServerAdr)
 		return result
 	}
-	return a.httpServerAdr
+	return a.HttpServerAdr
 }
 func (a *Agent) String() string {
-	return fmt.Sprintf("server:(%s)\nreportInterval:(%d sec)\npollInterval:(%d sec)", a.httpServerAdr, a.reportIntervalSecond, a.pollIntervalSecond)
+	return fmt.Sprintf("server:(%s)\nreportInterval:(%d sec)\npollInterval:(%d sec)", a.HttpServerAdr, a.ReportIntervalSecond, a.PollIntervalSecond)
 }
 
 func NewAgentConfig() *Agent {

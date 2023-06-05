@@ -5,14 +5,14 @@ import (
 )
 
 type Server struct {
-	httpServerAdr string
+	HttpServerAdr string `env:"ADDRESS"`
 }
 
 func (srv *Server) GetMyAddress() string {
-	return srv.httpServerAdr
+	return srv.HttpServerAdr
 }
 func (srv *Server) String() string {
-	return fmt.Sprintf("server:(%s)", srv.httpServerAdr)
+	return fmt.Sprintf("server:(%s)", srv.HttpServerAdr)
 }
 
 func NewServerConfig() *Server {
