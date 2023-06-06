@@ -38,12 +38,8 @@ func (lm *LineMan) Delivery(data map[string]string) error {
 	return nil
 }
 func NewLineMan(receiver string) (DeliveryMan, error) {
-	val, err := url.JoinPath(receiver, "/value")
-	if err != nil {
-		return nil, err
-	}
 	return &LineMan{
-		receiver:   val,
+		receiver:   receiver,
 		httpclient: http.Client{Timeout: time.Second * 2},
 	}, nil
 }
