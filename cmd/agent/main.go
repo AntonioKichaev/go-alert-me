@@ -7,13 +7,15 @@ import (
 	"net/url"
 )
 
+const _endPointUpdateValue = "/update"
+
 func main() {
 	agentConfig := config.NewAgentConfig()
 	config.ParseFlag(agentConfig)
 	pollInterval := agentConfig.GetPollIntervalSecond()
 	reportIterval := agentConfig.GetReportIntervalSecond()
 	fmt.Println("config agent", agentConfig)
-	diliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), "/value")
+	diliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
 	if err != nil {
 		panic(err)
 	}

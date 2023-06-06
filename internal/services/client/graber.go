@@ -20,19 +20,17 @@ type Random interface {
 	Int() int
 }
 type Racoon struct {
-	PollCount int
-	random    Random
+	random Random
 }
 
 func NewRacoon() Grabber {
 	return &Racoon{
-		PollCount: 0,
-		random:    rand.New(rand.NewSource(322)),
+		random: rand.New(rand.NewSource(322)),
 	}
 }
 
 func (rc *Racoon) GetSnapshot() map[string]string {
-	rc.PollCount++
+
 	snapshot := make(map[string]string, len(_allowGaugeMetric)+_additionsMetrics)
 	rc.setGauge(snapshot)
 	rc.setAdditionalsMetics(snapshot)
@@ -47,13 +45,14 @@ func (rc *Racoon) setGauge(metrics map[string]string) {
 		field := el.Type().Field(i)
 		value := el.Field(i)
 		if _, ok := _allowGaugeMetric[field.Name]; ok {
-			metrics[field.Name] = fmt.Sprintf("%v", value)
+			metrics["gauge/"+field.Name] = fmt.Sprintf("%v", value)
 		}
 	}
 
 }
 
 func (rc *Racoon) setAdditionalsMetics(metrics map[string]string) {
-	metrics["RandomValue"] = strconv.Itoa(rc.random.Int())
-	metrics["PollCount"] = strconv.Itoa(rc.PollCount)
+	metrics["gauge/RandomValue"] = strconv.Itoa(rc.random.Int())
+	//PollCount - если она counter то зачем мне ее инкриментить если мы просто будетм кидать 1 всегда на сервере будет инкримент
+	metrics["counter/PollCount"] = "1"
 }

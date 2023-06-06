@@ -92,6 +92,12 @@ func TestUpdateMetrics(t *testing.T) {
 			statusCode:  http.StatusBadRequest,
 			contentType: "",
 		},
+		"incorrect method ": {
+			method:      http.MethodGet,
+			targetURL:   "/update/gauge/ram/none",
+			statusCode:  http.StatusMethodNotAllowed,
+			contentType: "",
+		},
 	}
 
 	srv := httptest.NewServer(r)

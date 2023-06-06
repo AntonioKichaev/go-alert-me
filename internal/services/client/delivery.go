@@ -1,9 +1,11 @@
 package client
 
 import (
+	"errors"
+	"fmt"
+	"github.com/go-resty/resty/v2"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 //go:generate mockery  --name DeliveryMan
@@ -13,26 +15,27 @@ type DeliveryMan interface {
 
 type LineMan struct {
 	receiver   string
-	httpclient http.Client
+	httpclient *resty.Client
 }
 
-func (lm *LineMan) Delivery(data map[string]string) error {
-	for key, val := range data {
-		urlPath, err := url.JoinPath(lm.receiver, key, val)
-		if err != nil {
-			return err
-		}
-		request, err := http.NewRequest(_methodRequestSend, urlPath, nil)
-		if err != nil {
-			return err
-		}
-		resp, err := lm.httpclient.Do(request)
+var ErrorStatusCode = errors.New("delivery status code")
 
+func (lm *LineMan) Delivery(data map[string]string) error {
+	for metricType, value := range data {
+		urlPath, err := url.JoinPath(lm.receiver, metricType, value)
 		if err != nil {
-			// server isn't available
 			return err
 		}
-		_ = resp.Body.Close()
+		request := lm.httpclient.R()
+		request.Method = _methodRequestSend
+		request.URL = urlPath
+		response, err := request.Send()
+		if err != nil {
+			return err
+		}
+		if response.StatusCode() != http.StatusOK {
+			return fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
+		}
 
 	}
 	return nil
@@ -40,6 +43,6 @@ func (lm *LineMan) Delivery(data map[string]string) error {
 func NewLineMan(receiver string) (DeliveryMan, error) {
 	return &LineMan{
 		receiver:   receiver,
-		httpclient: http.Client{Timeout: time.Second * 2},
+		httpclient: resty.New(),
 	}, nil
 }

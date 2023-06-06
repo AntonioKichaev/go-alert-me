@@ -30,24 +30,13 @@ func newHandlerMetrics(store storages.MetricRepository) *handlerMetric {
 }
 
 func (h *handlerMetric) Register(router *chi.Mux) {
-	_ = func(statusCode int) func(http.ResponseWriter, *http.Request) {
-		return func(writer http.ResponseWriter, request *http.Request) {
-			writer.WriteHeader(statusCode)
-		}
-	}
 	router.Route("/update", func(r chi.Router) {
 		r.Post(fmt.Sprintf("/{%s}/{%s}/{%s}", _metricType, _metricName, _metricValue), h.updateMetrics)
 	})
-
 }
 
-// HandlerCounter принимает запрос ввида /update/{counter|gauge}/someMetric/527
+// updateMetrics принимает запрос ввида /update/{counter|gauge}/someMetric/527
 func (h *handlerMetric) updateMetrics(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
 	metricType := chi.URLParam(r, _metricType)
 	metricName := chi.URLParam(r, _metricName)
 	metricValue := chi.URLParam(r, _metricValue)

@@ -15,8 +15,7 @@ type MockMemStorage struct {
 }
 
 func (mm *MockMemStorage) GetMetrics() map[string]string {
-	return nil
-
+	return mm.mem.GetMetrics()
 }
 
 func NewMockMemStorage() MockKeeper {
@@ -30,32 +29,36 @@ func (mm *MockMemStorage) SetGauge(metricName string, value float64) {
 }
 
 func (mm *MockMemStorage) GetCounter(metricName string) (int64, error) {
-	return mm.mem.storeCounter[metricName], nil // todo:error if metricName doesn't exist
+	return mm.mem.GetCounter(metricName) // todo:error if metricName doesn't exist
 }
 func (mm *MockMemStorage) GetGauge(metricName string) (float64, error) {
-	return mm.mem.storeGauge[metricName], nil
+	return mm.mem.GetGauge(metricName)
 }
 
 func TestMemStorage_AddCounter(t *testing.T) {
 	tt := map[string]struct {
-		metricName string
-		values     []int64
-		want       int64
+		metricName  string
+		values      []int64
+		wantMetrics map[string]string
+		want        int64
 	}{
 		"one_value": {
-			metricName: "ram",
-			values:     []int64{352},
-			want:       352,
+			metricName:  "ram",
+			values:      []int64{352},
+			want:        352,
+			wantMetrics: map[string]string{"ram": "352"},
 		},
 		"many_values": {
-			metricName: "ram",
-			values:     []int64{1, 2, 3, 4, 5},
-			want:       15,
+			metricName:  "koef",
+			values:      []int64{1, 2, 3, 4, 5},
+			want:        15,
+			wantMetrics: map[string]string{"koef": "15"},
 		},
 		"many_values_negative_include": {
-			metricName: "ram",
-			values:     []int64{1, 2, 3, 4, -5},
-			want:       5,
+			metricName:  "ram",
+			values:      []int64{1, 2, 3, 4, -5},
+			want:        5,
+			wantMetrics: map[string]string{"ram": "5"},
 		},
 	}
 
@@ -69,6 +72,7 @@ func TestMemStorage_AddCounter(t *testing.T) {
 			got, err := storage.GetCounter(tc.metricName)
 			req.EqualValues(tc.want, got)
 			req.NoError(err)
+			req.EqualValues(tc.wantMetrics, storage.GetMetrics(), "GetMetrics()")
 
 		})
 	}
@@ -77,24 +81,28 @@ func TestMemStorage_AddCounter(t *testing.T) {
 
 func TestMemStorage_SetGauge(t *testing.T) {
 	tt := map[string]struct {
-		metricName string
-		values     []float64
-		want       float64
+		metricName  string
+		values      []float64
+		want        float64
+		wantMetrics map[string]string
 	}{
 		"one_value": {
-			metricName: "ram",
-			values:     []float64{352, 0, 2},
-			want:       2,
+			metricName:  "ram",
+			values:      []float64{352, 0, 2},
+			want:        2,
+			wantMetrics: map[string]string{"ram": "2"},
 		},
 		"many_values": {
-			metricName: "ram",
-			values:     []float64{1, 2, 3, 4, 5},
-			want:       5,
+			metricName:  "ram",
+			values:      []float64{1, 2, 3, 4, 5},
+			want:        5,
+			wantMetrics: map[string]string{"ram": "5"},
 		},
 		"many_values_negative_include": {
-			metricName: "ram",
-			values:     []float64{1, 2, 3, 4, -5},
-			want:       -5,
+			metricName:  "ram",
+			values:      []float64{1, 2, 3, 4, -5},
+			want:        -5,
+			wantMetrics: map[string]string{"ram": "-5"},
 		},
 	}
 	req := require.New(t)
@@ -107,6 +115,7 @@ func TestMemStorage_SetGauge(t *testing.T) {
 			got, err := storage.GetGauge(tc.metricName)
 			req.EqualValues(tc.want, got)
 			req.NoError(err)
+			req.EqualValues(tc.wantMetrics, storage.GetMetrics(), "GetMetrics()")
 
 		})
 	}

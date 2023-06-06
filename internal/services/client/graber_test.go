@@ -20,8 +20,8 @@ func TestRacoon_GetSnapshot(t *testing.T) {
 			randomVal: 324,
 			pollCount: 55,
 			wantSnapShot: map[string]string{
-				"RandomValue": "324",
-				"PollCount":   "55",
+				"gauge/RandomValue": "324",
+				"counter/PollCount": "1",
 			},
 		},
 		{
@@ -37,8 +37,7 @@ func TestRacoon_GetSnapshot(t *testing.T) {
 				rnd.EXPECT().Int().Return(tt.randomVal)
 			}
 			racoon := Racoon{
-				PollCount: 0,
-				random:    rnd,
+				random: rnd,
 			}
 			gotSnap := map[string]string{}
 			for i := 0; i < tt.pollCount; i++ {
@@ -46,10 +45,9 @@ func TestRacoon_GetSnapshot(t *testing.T) {
 			}
 
 			for key, val := range tt.wantSnapShot {
-				assert.Contains(t, gotSnap, key, "GetSnapshot()")
+				assert.Contains(t, gotSnap, key, tt.name+" GetSnapshot()")
 				assert.Equal(t, val, gotSnap[key])
 			}
-			assert.Equal(t, tt.pollCount, racoon.PollCount)
 			rnd.AssertExpectations(t)
 		})
 	}
