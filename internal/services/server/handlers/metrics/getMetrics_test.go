@@ -14,7 +14,7 @@ import (
 )
 
 func getServer(mockStore *mocks.MetricRepository) *httptest.Server {
-	h := newHadlerReciever(mockStore)
+	h := newHandlerReceiver(mockStore)
 	r := chi.NewRouter()
 	h.Register(r)
 

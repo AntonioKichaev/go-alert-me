@@ -13,10 +13,10 @@ type hadlerReciever struct {
 	repo storages.MetricRepository
 }
 
-func NewHadlerReciever(repo storages.MetricRepository) handlers.ExecuteHandler {
-	return newHadlerReciever(repo)
+func NewHandlerReceiver(repo storages.MetricRepository) handlers.ExecuteHandler {
+	return newHandlerReceiver(repo)
 }
-func newHadlerReciever(repo storages.MetricRepository) *hadlerReciever {
+func newHandlerReceiver(repo storages.MetricRepository) *hadlerReciever {
 	return &hadlerReciever{repo: repo}
 }
 

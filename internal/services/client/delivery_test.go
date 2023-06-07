@@ -67,7 +67,7 @@ func TestLineMan_Delivery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockStore.On("AddCounter", "ram", int64(55)).Maybe()
-			lm := &LineMan{
+			lm := &lineMan{
 				receiver:   tt.fields.receiver,
 				httpclient: tt.fields.httpclient,
 			}

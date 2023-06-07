@@ -36,7 +36,7 @@ func TestRacoon_GetSnapshot(t *testing.T) {
 			if tt.pollCount != 0 {
 				rnd.EXPECT().Int().Return(tt.randomVal)
 			}
-			racoon := Racoon{
+			racoon := racoon{
 				random: rnd,
 			}
 			gotSnap := map[string]string{}

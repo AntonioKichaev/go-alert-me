@@ -13,14 +13,14 @@ type DeliveryMan interface {
 	Delivery(map[string]string) error
 }
 
-type LineMan struct {
+type lineMan struct {
 	receiver   string
 	httpclient *resty.Client
 }
 
 var ErrorStatusCode = errors.New("delivery status code")
 
-func (lm *LineMan) Delivery(data map[string]string) error {
+func (lm *lineMan) Delivery(data map[string]string) error {
 	for metricType, value := range data {
 		urlPath, err := url.JoinPath(lm.receiver, metricType, value)
 		if err != nil {
@@ -41,7 +41,7 @@ func (lm *LineMan) Delivery(data map[string]string) error {
 	return nil
 }
 func NewLineMan(receiver string) (DeliveryMan, error) {
-	return &LineMan{
+	return &lineMan{
 		receiver:   receiver,
 		httpclient: resty.New(),
 	}, nil

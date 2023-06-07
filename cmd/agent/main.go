@@ -13,7 +13,7 @@ func main() {
 	agentConfig := config.NewAgentConfig()
 	config.ParseFlag(agentConfig)
 	pollInterval := agentConfig.GetPollIntervalSecond()
-	reportIterval := agentConfig.GetReportIntervalSecond()
+	reportInterval := agentConfig.GetReportIntervalSecond()
 	fmt.Println("config agent", agentConfig)
 	diliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
 	if err != nil {
@@ -22,7 +22,7 @@ func main() {
 	agent := client.NewAgentMetric(
 		client.SetName("anton"),
 		client.InitDeliveryAddress(diliveryAddress),
-		client.SetReportInterval(reportIterval),
+		client.SetReportInterval(reportInterval),
 		client.SetPollInterval(pollInterval),
 	)
 	agent.Run()

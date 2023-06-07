@@ -16,10 +16,10 @@ func main() {
 	mu := chi.NewRouter()
 	storeKeeper := memstorage.NewMemStorage()
 	handlerKeeper := metrics.NewHandlerMetrics(storeKeeper)
-	handlerReciever := metrics.NewHadlerReciever(storeKeeper)
+	handlerReceiver := metrics.NewHandlerReceiver(storeKeeper)
 
 	handlerKeeper.Register(mu)
-	handlerReciever.Register(mu)
+	handlerReceiver.Register(mu)
 
 	err := http.ListenAndServe(serverConfig.GetMyAddress(), mu)
 	if err != nil {
