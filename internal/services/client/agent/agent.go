@@ -1,16 +1,17 @@
-package client
+package agent
 
 import (
 	"fmt"
+	"github.com/antoniokichaev/go-alert-me/internal/services/client"
+	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers"
+	"github.com/antoniokichaev/go-alert-me/internal/services/client/senders"
 	"net/http"
 	"time"
 )
 
 const (
-	_methodRequestSend = http.MethodPost
+	MethodRequestSend = http.MethodPost
 )
-
-var _metricsLenght = len(_allowGaugeMetric)
 
 //go:generate mockery --name Agent
 type Agent interface {
@@ -23,10 +24,18 @@ type agentBond struct {
 	now            func() time.Time
 	name           string
 	metricsState   map[string]string
-	delivery       DeliveryMan
-	grabber        Grabber
+	metricsNumbers int
+	delivery       senders.DeliveryMan
+	grabber        grabbers.Grabber
 }
 type Option func(agent *agentBond)
+
+func SetMetricsNumber(num int) Option {
+	return func(agent *agentBond) {
+		agent.metricsNumbers = num
+
+	}
+}
 
 func SetName(name string) Option {
 	return func(agent *agentBond) {
@@ -36,7 +45,7 @@ func SetName(name string) Option {
 }
 func InitDeliveryAddress(address string) Option {
 	return func(agent *agentBond) {
-		delivery, err := NewLineMan(address) //todo: чо-то с ошибкой делать
+		delivery, err := senders.NewLineMan(address) //todo: чо-то с ошибкой делать
 		if err != nil {
 			panic(fmt.Errorf("InitDeliveryAddress:%w", err))
 		}
@@ -57,12 +66,7 @@ func SetPollInterval(sec int64) Option {
 
 func SetGrabber() Option {
 	return func(agent *agentBond) {
-		agent.grabber = NewRacoon()
-	}
-}
-func SetMetricState() Option {
-	return func(agent *agentBond) {
-		agent.metricsState = make(map[string]string, _metricsLenght)
+		agent.grabber = grabbers.NewRacoon()
 	}
 }
 
@@ -76,13 +80,15 @@ func NewAgentMetric(opts ...Option) Agent {
 		defaultName           = "bond"
 		defaultPollInterval   = 2
 		defaultReportInterval = 10
+		defaultMetricsNumbers = 1
 	)
 	agent := &agentBond{
 		name:           defaultName,
 		pollInterval:   defaultPollInterval,
 		reportInterval: defaultReportInterval,
-		grabber:        NewRacoon(),
-		metricsState:   make(map[string]string, _metricsLenght),
+		grabber:        grabbers.NewRacoon(grabbers.SetAllowMetrics(client.AllowGaugeMetric)),
+		metricsState:   make(map[string]string),
+		metricsNumbers: defaultMetricsNumbers,
 		now:            time.Now,
 	}
 	for _, opt := range opts {
@@ -113,7 +119,7 @@ func (agent *agentBond) Run() {
 }
 
 func (agent *agentBond) resetState() {
-	agent.metricsState = make(map[string]string, _metricsLenght)
+	agent.metricsState = make(map[string]string, agent.metricsNumbers)
 }
 func (agent *agentBond) updateState(state map[string]string) {
 	for key, val := range state {

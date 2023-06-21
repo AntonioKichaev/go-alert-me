@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/antoniokichaev/go-alert-me/config/agent"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client"
+	"github.com/antoniokichaev/go-alert-me/internal/services/client/agent"
 	"net/url"
 )
 
@@ -19,11 +20,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	agent := client.NewAgentMetric(
-		client.SetName("anton"),
-		client.InitDeliveryAddress(diliveryAddress),
-		client.SetReportInterval(reportInterval),
-		client.SetPollInterval(pollInterval),
+	ag := agent.NewAgentMetric(
+		agent.SetName("anton"),
+		agent.InitDeliveryAddress(diliveryAddress),
+		agent.SetReportInterval(reportInterval),
+		agent.SetPollInterval(pollInterval),
+		agent.SetMetricsNumber(len(client.AllowGaugeMetric)),
 	)
-	agent.Run()
+	ag.Run()
 }

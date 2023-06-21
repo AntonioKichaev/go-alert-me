@@ -29,11 +29,11 @@ func TestUpdateMetrics(t *testing.T) {
 		statusCode  int
 		contentType string
 		mockStore   mockStoreRequest
+		wantErr     error
 	}{
 		"add counter ": {
-			method:    http.MethodPost,
-			targetURL: "/update/counter/1/2",
-
+			method:      http.MethodPost,
+			targetURL:   "/update/counter/1/2",
 			statusCode:  http.StatusOK,
 			contentType: _contentTypeText,
 			mockStore:   mockStoreRequest{methodName: _addCounter, args: []any{"1", int64(2)}},

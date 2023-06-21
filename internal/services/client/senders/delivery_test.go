@@ -1,4 +1,4 @@
-package client
+package senders
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
@@ -27,6 +28,7 @@ func TestLineMan_Delivery(t *testing.T) {
 	type fields struct {
 		receiver   string
 		httpclient *resty.Client
+		methodSend string
 	}
 	type args struct {
 		data map[string]string
@@ -43,6 +45,7 @@ func TestLineMan_Delivery(t *testing.T) {
 			fields: fields{
 				receiver:   targetURL,
 				httpclient: client,
+				methodSend: http.MethodPost,
 			},
 			args: args{
 				data: map[string]string{"counter/ram": "55"},
@@ -54,6 +57,7 @@ func TestLineMan_Delivery(t *testing.T) {
 			fields: fields{
 				receiver:   targetURL,
 				httpclient: client,
+				methodSend: http.MethodPost,
 			},
 			args: args{
 				data: map[string]string{"ram": "test"},
@@ -70,6 +74,7 @@ func TestLineMan_Delivery(t *testing.T) {
 			lm := &lineMan{
 				receiver:   tt.fields.receiver,
 				httpclient: tt.fields.httpclient,
+				methodSend: tt.fields.methodSend,
 			}
 			tt.wantErr(t, lm.Delivery(tt.args.data), fmt.Sprintf("Delivery(%v)", tt.args.data))
 		})

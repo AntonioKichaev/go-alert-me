@@ -41,24 +41,35 @@ func TestMemStorage_AddCounter(t *testing.T) {
 		values      []int64
 		wantMetrics map[string]string
 		want        int64
+		wantErr     error
 	}{
 		"one_value": {
 			metricName:  "ram",
 			values:      []int64{352},
 			want:        352,
 			wantMetrics: map[string]string{"ram": "352"},
+			wantErr:     nil,
 		},
 		"many_values": {
 			metricName:  "koef",
 			values:      []int64{1, 2, 3, 4, 5},
 			want:        15,
 			wantMetrics: map[string]string{"koef": "15"},
+			wantErr:     nil,
 		},
 		"many_values_negative_include": {
 			metricName:  "ram",
 			values:      []int64{1, 2, 3, 4, -5},
 			want:        5,
 			wantMetrics: map[string]string{"ram": "5"},
+			wantErr:     nil,
+		},
+		"error not found": {
+			metricName:  "ram",
+			values:      []int64{},
+			want:        0,
+			wantMetrics: map[string]string{},
+			wantErr:     ErrorNotExistMetric,
 		},
 	}
 
@@ -71,7 +82,7 @@ func TestMemStorage_AddCounter(t *testing.T) {
 			}
 			got, err := storage.GetCounter(tc.metricName)
 			req.EqualValues(tc.want, got)
-			req.NoError(err)
+			req.ErrorIs(tc.wantErr, err)
 			req.EqualValues(tc.wantMetrics, storage.GetMetrics(), "GetMetrics()")
 
 		})
@@ -85,24 +96,35 @@ func TestMemStorage_SetGauge(t *testing.T) {
 		values      []float64
 		want        float64
 		wantMetrics map[string]string
+		wantErr     error
 	}{
 		"one_value": {
 			metricName:  "ram",
 			values:      []float64{352, 0, 2},
 			want:        2,
 			wantMetrics: map[string]string{"ram": "2"},
+			wantErr:     nil,
 		},
 		"many_values": {
 			metricName:  "ram",
 			values:      []float64{1, 2, 3, 4, 5},
 			want:        5,
 			wantMetrics: map[string]string{"ram": "5"},
+			wantErr:     nil,
 		},
 		"many_values_negative_include": {
 			metricName:  "ram",
 			values:      []float64{1, 2, 3, 4, -5},
 			want:        -5,
 			wantMetrics: map[string]string{"ram": "-5"},
+			wantErr:     nil,
+		},
+		"ErrorNotExist": {
+			metricName:  "ram",
+			values:      []float64{},
+			want:        0,
+			wantMetrics: map[string]string{},
+			wantErr:     ErrorNotExistMetric,
 		},
 	}
 	req := require.New(t)
@@ -114,7 +136,7 @@ func TestMemStorage_SetGauge(t *testing.T) {
 			}
 			got, err := storage.GetGauge(tc.metricName)
 			req.EqualValues(tc.want, got)
-			req.NoError(err)
+			req.ErrorIs(tc.wantErr, err)
 			req.EqualValues(tc.wantMetrics, storage.GetMetrics(), "GetMetrics()")
 
 		})

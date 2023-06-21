@@ -1,6 +1,6 @@
 package client
 
-var _allowGaugeMetric = map[string]struct{}{
+var AllowGaugeMetric = map[string]struct{}{
 	"Alloc":         {},
 	"BuckHashSys":   {},
 	"Frees":         {},

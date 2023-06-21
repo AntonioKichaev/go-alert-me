@@ -81,7 +81,7 @@ func TestGetMetrics(t *testing.T) {
 
 	for key, tc := range tt {
 		t.Run(key, func(t *testing.T) {
-			if len(tc.mockStore.args) != 0 {
+			if len(tc.mockStore.args) != 0 || tc.mockStore.methodName != "" {
 				mockStore.On(tc.mockStore.methodName, tc.mockStore.args...).Return(tc.mockStore.returnValue...)
 			}
 

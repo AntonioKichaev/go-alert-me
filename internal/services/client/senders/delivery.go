@@ -1,4 +1,4 @@
-package client
+package senders
 
 import (
 	"errors"
@@ -16,6 +16,7 @@ type DeliveryMan interface {
 type lineMan struct {
 	receiver   string
 	httpclient *resty.Client
+	methodSend string
 }
 
 var ErrorStatusCode = errors.New("delivery status code")
@@ -27,7 +28,7 @@ func (lm *lineMan) Delivery(data map[string]string) error {
 			return err
 		}
 		request := lm.httpclient.R()
-		request.Method = _methodRequestSend
+		request.Method = lm.methodSend
 		request.URL = urlPath
 		response, err := request.Send()
 		if err != nil {

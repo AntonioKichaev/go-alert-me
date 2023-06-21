@@ -1,7 +1,9 @@
-package client
+package agent
 
 import (
+	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client/mocks"
+	"github.com/antoniokichaev/go-alert-me/internal/services/client/senders"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -25,8 +27,8 @@ func Test_agentBond_Run(t *testing.T) {
 		now            func() time.Time
 		name           string
 		metricsState   map[string]string
-		delivery       DeliveryMan
-		grabber        Grabber
+		delivery       senders.DeliveryMan
+		grabber        grabbers.Grabber
 	}
 	tests := map[string]struct {
 		fields    fields

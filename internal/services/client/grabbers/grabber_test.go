@@ -1,4 +1,4 @@
-package client
+package grabbers
 
 import (
 	"github.com/antoniokichaev/go-alert-me/internal/services/client/mocks"
