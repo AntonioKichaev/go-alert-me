@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	configSrv "github.com/antoniokichaev/go-alert-me/config/server"
-	"github.com/antoniokichaev/go-alert-me/internal/services/server/handlers/metrics"
-	"github.com/antoniokichaev/go-alert-me/internal/storages/memstorage"
+	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	"github.com/antoniokichaev/go-alert-me/internal/usecase"
+	memstorage "github.com/antoniokichaev/go-alert-me/internal/usecase/repo"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
@@ -15,11 +16,11 @@ func main() {
 	fmt.Println("config server", serverConfig)
 	mu := chi.NewRouter()
 	storeKeeper := memstorage.NewMemStorage()
-	handlerKeeper := metrics.NewHandlerMetrics(storeKeeper)
-	handlerReceiver := metrics.NewHandlerReceiver(storeKeeper)
-
-	handlerKeeper.Register(mu)
-	handlerReceiver.Register(mu)
+	{
+		updaterUc := usecase.NewUpdater(storeKeeper)
+		getterUc := usecase.NewReceiver(storeKeeper)
+		v1.NewRouter(mu, updaterUc, getterUc)
+	}
 
 	err := http.ListenAndServe(serverConfig.GetMyAddress(), mu)
 	if err != nil {

@@ -1,8 +1,11 @@
-package metrics
+package metrics_test
 
 import (
 	"errors"
-	"github.com/antoniokichaev/go-alert-me/internal/storages/mocks"
+	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	"github.com/antoniokichaev/go-alert-me/internal/entity"
+	"github.com/antoniokichaev/go-alert-me/internal/usecase"
+	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -13,16 +16,18 @@ import (
 	"testing"
 )
 
-func getServer(mockStore *mocks.MetricRepository) *httptest.Server {
-	h := newHandlerReceiver(mockStore)
-	r := chi.NewRouter()
-	h.Register(r)
+const _contentTypeText = "text/plain; charset=utf-8"
 
+func getServer(mockStore *mocks.Keeper) *httptest.Server {
+	getterUc := usecase.NewReceiver(mockStore)
+	updaterUc := usecase.NewUpdater(mockStore)
+	r := chi.NewRouter()
+	v1.NewRouter(r, updaterUc, getterUc)
 	return httptest.NewServer(r)
 }
 
 func TestGetMetrics(t *testing.T) {
-	mockStore := mocks.NewMetricRepository(t)
+	mockStore := mocks.NewKeeper(t)
 	srv := getServer(mockStore)
 	defer srv.Close()
 
@@ -33,6 +38,7 @@ func TestGetMetrics(t *testing.T) {
 		args        []any
 		returnValue []any
 	}
+
 	tt := map[string]struct {
 		method      string
 		targetURL   string
@@ -49,7 +55,7 @@ func TestGetMetrics(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
 				args:        []any{"my"},
-				returnValue: []any{int64(5), nil},
+				returnValue: []any{&entity.Counter{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
 		},
@@ -61,7 +67,7 @@ func TestGetMetrics(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getGauge,
 				args:        []any{"my"},
-				returnValue: []any{float64(5), nil},
+				returnValue: []any{&entity.Gauge{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
 		},
@@ -74,7 +80,7 @@ func TestGetMetrics(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
 				args:        []any{"unk"},
-				returnValue: []any{int64(0), errors.New("NotFound")},
+				returnValue: []any{nil, errors.New("NotFound")},
 			},
 		},
 	}
@@ -87,7 +93,8 @@ func TestGetMetrics(t *testing.T) {
 
 			request := resty.New().R()
 			request.Method = tc.method
-			u, _ := url.JoinPath(srv.URL, tc.targetURL)
+			u, err := url.JoinPath(srv.URL, tc.targetURL)
+			assert.NoError(t, err)
 			request.URL = u
 			response, err := request.Send()
 			assert.NoError(t, err)
@@ -100,29 +107,32 @@ func TestGetMetrics(t *testing.T) {
 }
 
 func TestGetAllMetrics(t *testing.T) {
-	mockStore := mocks.NewMetricRepository(t)
+	mockStore := mocks.NewKeeper(t)
 	srv := getServer(mockStore)
 	defer srv.Close()
 
 	tt := map[string]struct {
 		returnStore map[string]string
 		want        string
+		wantErr     error
 	}{
 		"get all metrics": {
 			returnStore: map[string]string{
 				"lex":  "26",
 				"test": "25",
 			},
-			want: "test 25\nlex 26\n",
+			want:    "test 25\nlex 26\n",
+			wantErr: nil,
 		},
 		"get nothing metrics": {
 			returnStore: nil,
 			want:        "",
+			wantErr:     nil,
 		},
 	}
 	for key, tc := range tt {
 		t.Run(key, func(t *testing.T) {
-			mockStore.EXPECT().GetMetrics().Return(tc.returnStore)
+			mockStore.EXPECT().GetMetrics().Return(tc.returnStore, tc.wantErr)
 			request := resty.New().R()
 			request.Method = http.MethodGet
 			request.URL = srv.URL

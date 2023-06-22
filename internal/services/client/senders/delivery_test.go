@@ -2,8 +2,10 @@ package senders
 
 import (
 	"fmt"
-	"github.com/antoniokichaev/go-alert-me/internal/services/server/handlers/metrics"
-	"github.com/antoniokichaev/go-alert-me/internal/storages/mocks"
+	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	"github.com/antoniokichaev/go-alert-me/internal/entity"
+	"github.com/antoniokichaev/go-alert-me/internal/usecase"
+	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -13,12 +15,17 @@ import (
 	"testing"
 )
 
-func TestLineMan_Delivery(t *testing.T) {
-	mockStore := mocks.NewMetricRepository(t)
-	handlerMetrics := metrics.NewHandlerMetrics(mockStore)
+func getServer(mockStore *mocks.Keeper) *httptest.Server {
+	getterUc := usecase.NewReceiver(mockStore)
+	updaterUc := usecase.NewUpdater(mockStore)
 	r := chi.NewRouter()
-	handlerMetrics.Register(r)
-	srv := httptest.NewServer(r)
+	v1.NewRouter(r, updaterUc, getterUc)
+	return httptest.NewServer(r)
+}
+
+func TestLineMan_Delivery(t *testing.T) {
+	mockStore := mocks.NewKeeper(t)
+	srv := getServer(mockStore)
 	targetURL, err := url.JoinPath(srv.URL, "/update")
 	client := resty.NewWithClient(srv.Client())
 	if err != nil {
@@ -70,13 +77,15 @@ func TestLineMan_Delivery(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockStore.On("AddCounter", "ram", int64(55)).Maybe()
+			mockStore.On("AddCounter", &entity.Counter{Name: "ram", Value: int64(55)}).Maybe().Return(nil)
 			lm := &lineMan{
 				receiver:   tt.fields.receiver,
 				httpclient: tt.fields.httpclient,
 				methodSend: tt.fields.methodSend,
 			}
-			tt.wantErr(t, lm.Delivery(tt.args.data), fmt.Sprintf("Delivery(%v)", tt.args.data))
+			err := lm.Delivery(tt.args.data)
+			tt.wantErr(t, err, fmt.Sprintf("Delivery(%v)", tt.args.data))
+			mockStore.AssertExpectations(t)
 		})
 	}
 }
