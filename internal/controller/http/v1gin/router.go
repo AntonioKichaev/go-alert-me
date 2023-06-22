@@ -1,4 +1,4 @@
-package v1_gin
+package v1gin
 
 import (
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"

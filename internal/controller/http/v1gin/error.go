@@ -1,4 +1,4 @@
-package v1_gin
+package v1gin
 
 import "errors"
 
