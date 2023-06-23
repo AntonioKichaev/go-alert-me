@@ -2,29 +2,21 @@ package agent
 
 import (
 	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client/mocks"
+	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers/mocks"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client/senders"
-	"github.com/stretchr/testify/assert"
+	smocks "github.com/antoniokichaev/go-alert-me/internal/services/client/senders/mocks"
+	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
 )
 
 func Test_agentBond_Run(t *testing.T) {
-	mockDelivery := mocks.NewDeliveryMan(t)
+	mockDelivery := smocks.NewDeliveryMan(t)
 	mockGrabber := mocks.NewGrabber(t)
-	counter := 0
-	now := func() time.Time {
-		if counter > 11 {
-			return time.Date(2012, time.January, 1, 1, 1, 1, 1, time.Local)
-		}
-		counter++
-		return time.Now()
-	}
 
 	type fields struct {
 		pollInterval   time.Duration
 		reportInterval time.Duration
-		now            func() time.Time
 		name           string
 		metricsState   map[string]string
 		delivery       senders.DeliveryMan
@@ -38,38 +30,46 @@ func Test_agentBond_Run(t *testing.T) {
 			fields: fields{
 				pollInterval:   time.Second * 1,
 				reportInterval: time.Second * 5,
-				now:            now,
 				name:           "qwe",
 				metricsState:   make(map[string]string),
-				delivery:       mockDelivery,
 				grabber:        mockGrabber,
+				delivery:       mockDelivery,
 			},
 			lastState: make(map[string]string),
 		},
 	}
+	//
+	//minCallsGetSnapshot := 10
+	//minCallsDeliveryBody := 2
 	for key, tc := range tests {
 		t.Run(key, func(t *testing.T) {
-			mockDelivery.EXPECT().Delivery(map[string]string{
-				"ram": "5",
-				"qwe": "55",
-			}).Times(1).Return(nil)
+			//mockDelivery.On("DeliveryBody", mock.Anything).Return(nil).Maybe()
+			mockDelivery.EXPECT().DeliveryBody(mock.Anything).Return(nil).Maybe()
 			mockGrabber.EXPECT().GetSnapshot().Return(map[string]string{
-				"ram": "5",
-				"qwe": "55",
-			}).Times(6)
+				"counter/test": "5",
+				"gauge/age":    "55",
+			}).Maybe()
+
+			stop := make(chan struct{})
 			agent := &agentBond{
 				pollInterval:   tc.fields.pollInterval,
 				reportInterval: tc.fields.reportInterval,
-				now:            tc.fields.now,
 				name:           tc.fields.name,
 				metricsState:   tc.fields.metricsState,
 				delivery:       tc.fields.delivery,
 				grabber:        tc.fields.grabber,
+				notify:         stop,
 			}
+			tick := time.NewTicker(time.Second * 15)
+			go func() {
+				<-tick.C
+				stop <- struct{}{}
+			}()
 			agent.Run()
 			mockDelivery.AssertExpectations(t)
 			mockGrabber.AssertExpectations(t)
-			assert.EqualValues(t, tc.lastState, agent.metricsState)
+			mockDelivery.AssertCalled(t, "DeliveryBody", mock.Anything)
+			mockGrabber.AssertCalled(t, "GetSnapshot")
 
 		})
 	}

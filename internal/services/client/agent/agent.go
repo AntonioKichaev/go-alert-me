@@ -1,11 +1,15 @@
 package agent
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client/senders"
+	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -21,15 +25,20 @@ type Agent interface {
 type agentBond struct {
 	pollInterval   time.Duration
 	reportInterval time.Duration
-	now            func() time.Time
 	name           string
 	metricsState   map[string]string
 	metricsNumbers int
 	delivery       senders.DeliveryMan
 	grabber        grabbers.Grabber
+	notify         <-chan struct{}
 }
 type Option func(agent *agentBond)
 
+func SetNotifyChan(ch chan struct{}) Option {
+	return func(agent *agentBond) {
+		agent.notify = ch
+	}
+}
 func SetMetricsNumber(num int) Option {
 	return func(agent *agentBond) {
 		agent.metricsNumbers = num
@@ -43,9 +52,9 @@ func SetName(name string) Option {
 
 	}
 }
-func InitDeliveryAddress(address string) Option {
+func InitDeliveryAddress(address, method string) Option {
 	return func(agent *agentBond) {
-		delivery, err := senders.NewLineMan(address) //todo: чо-то с ошибкой делать
+		delivery, err := senders.NewLineMan(address, method) //todo: чо-то с ошибкой делать
 		if err != nil {
 			panic(fmt.Errorf("InitDeliveryAddress:%w", err))
 		}
@@ -70,16 +79,11 @@ func SetGrabber() Option {
 	}
 }
 
-func SetFunctionGetTime(fc func() time.Time) Option {
-	return func(agent *agentBond) {
-		agent.now = fc
-	}
-}
 func NewAgentMetric(opts ...Option) Agent {
 	const (
 		defaultName           = "bond"
-		defaultPollInterval   = 2
-		defaultReportInterval = 10
+		defaultPollInterval   = 2 * time.Second
+		defaultReportInterval = 10 * time.Second
 		defaultMetricsNumbers = 1
 	)
 	agent := &agentBond{
@@ -89,7 +93,7 @@ func NewAgentMetric(opts ...Option) Agent {
 		grabber:        grabbers.NewRacoon(grabbers.SetAllowMetrics(client.AllowGaugeMetric)),
 		metricsState:   make(map[string]string),
 		metricsNumbers: defaultMetricsNumbers,
-		now:            time.Now,
+		notify:         make(chan struct{}),
 	}
 	for _, opt := range opts {
 		opt(agent)
@@ -98,23 +102,28 @@ func NewAgentMetric(opts ...Option) Agent {
 }
 
 func (agent *agentBond) Run() {
-	startTime := agent.now()
-	isAfter := true /*do it for make test stop*/
-	for ; isAfter; isAfter = agent.now().After(startTime) {
-		snap := agent.grabber.GetSnapshot()
-		agent.updateState(snap)
-		if agent.now().Sub(startTime) > agent.reportInterval {
-
-			err := agent.delivery.Delivery(agent.metricsState)
-			agent.resetState()
-			startTime = agent.now()
-			if err != nil {
+	reportTicker := time.NewTicker(agent.reportInterval)
+	pollTicker := time.NewTicker(agent.pollInterval)
+	for {
+		select {
+		case <-reportTicker.C:
+			data := agent.makeFormatToSend()
+			if len(data) > 0 {
+				err := agent.delivery.DeliveryBody(data)
 				fmt.Println(err)
+			} else {
+
+				fmt.Println("Nothind to send")
 			}
-
+			agent.resetState()
+		case <-pollTicker.C:
+			snap := agent.grabber.GetSnapshot()
+			agent.updateState(snap)
+		case <-agent.notify:
+			return
+		default:
+			time.Sleep(time.Second / 2)
 		}
-		time.Sleep(agent.pollInterval)
-
 	}
 }
 
@@ -123,6 +132,38 @@ func (agent *agentBond) resetState() {
 }
 func (agent *agentBond) updateState(state map[string]string) {
 	for key, val := range state {
+		if strings.Contains(key, "counter") {
+			nVal, _ := strconv.Atoi(val)
+			oldVal, _ := strconv.Atoi(agent.metricsState[key])
+			val = strconv.Itoa(nVal + oldVal)
+		}
 		agent.metricsState[key] = val
 	}
+}
+
+func (agent *agentBond) makeFormatToSend() [][]byte {
+	// 1 way
+	// передавать строки ввида json {}
+	// надо будет чтоб агент превращал state ->json
+	//
+	//
+	res := make([][]byte, 0, len(agent.metricsState))
+
+	for key, val := range agent.metricsState {
+		s := strings.Split(key, "/")
+		if len(s) < 2 {
+			continue
+		}
+		t, err := metrics.NewMetrics(s[0], s[1], val)
+		if err != nil {
+			continue
+		}
+		b, err := json.Marshal(t)
+		if err != nil {
+			continue
+		}
+		res = append(res, b)
+
+	}
+	return res
 }

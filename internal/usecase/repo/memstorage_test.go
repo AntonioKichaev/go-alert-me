@@ -1,8 +1,8 @@
 package memstorage
 
 import (
-	"github.com/antoniokichaev/go-alert-me/internal/entity"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
+	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -57,17 +57,17 @@ func TestMemStorage_AddCounter(t *testing.T) {
 			storage := mocks.NewKeeper(t)
 			res := int64(0)
 			for _, val := range tc.fields {
-				c, err := entity.NewCounter(val.name, val.value)
+				c, err := metrics.NewCounter(val.name, val.value)
 				assert.NoError(t, err, "create newCounter err")
-				storage.EXPECT().AddCounter(c).Return(tc.wantErr)
+				storage.EXPECT().AddCounter(c).Return(nil, tc.wantErr)
 				res += c.GetValue()
-				_ = storage.AddCounter(c)
+				_, _ = storage.AddCounter(c)
 			}
 			metricName := ""
 			if len(tc.fields) != 0 {
 				metricName = tc.fields[0].name
 			}
-			storage.EXPECT().GetCounter(metricName).Return(&entity.Counter{Name: metricName, Value: res}, tc.wantErr)
+			storage.EXPECT().GetCounter(metricName).Return(&metrics.Counter{Name: metricName, Value: res}, tc.wantErr)
 			got, err := storage.GetCounter(metricName)
 			req.EqualValues(tc.want, got.GetValue())
 			req.ErrorIs(tc.wantErr, err)

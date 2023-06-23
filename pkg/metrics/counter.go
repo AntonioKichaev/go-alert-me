@@ -1,4 +1,4 @@
-package entity
+package metrics
 
 import (
 	"strconv"
@@ -11,6 +11,9 @@ type Counter struct {
 
 func (c *Counter) GetValue() int64 {
 	return c.Value
+}
+func (c *Counter) SetValue(value int64) {
+	c.Value = value
 }
 func (c *Counter) GetName() string {
 	return c.Name

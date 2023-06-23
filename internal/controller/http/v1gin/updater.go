@@ -3,8 +3,8 @@ package v1gin
 import (
 	"errors"
 	"fmt"
-	"github.com/antoniokichaev/go-alert-me/internal/entity"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
+	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -42,16 +42,16 @@ func (h *updaterRoutes) updateMetrics(ctx *gin.Context) {
 
 	var err error
 
-	switch entity.MetricType(metricType) {
-	case entity.GaugeName:
-		err = h.uc.SetGauge(metricName, metricValue)
-	case entity.CounterName:
-		err = h.uc.AddCounter(metricName, metricValue)
+	switch metrics.MetricType(metricType) {
+	case metrics.GaugeName:
+		_, err = h.uc.SetGauge(metricName, metricValue)
+	case metrics.CounterName:
+		_, err = h.uc.AddCounter(metricName, metricValue)
 	default:
 		err = ErrorUnknownMetricType
 	}
 	if err != nil {
-		if errors.Is(err, entity.ErrorName) {
+		if errors.Is(err, metrics.ErrorName) {
 			ctx.AbortWithStatus(_zeroMetricName)
 			return
 		}

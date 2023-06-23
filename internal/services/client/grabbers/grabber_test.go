@@ -1,7 +1,7 @@
 package grabbers
 
 import (
-	"github.com/antoniokichaev/go-alert-me/internal/services/client/mocks"
+	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers/mocks"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

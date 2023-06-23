@@ -11,6 +11,7 @@ import (
 //go:generate mockery  --name DeliveryMan
 type DeliveryMan interface {
 	Delivery(map[string]string) error
+	DeliveryBody([][]byte) error
 }
 
 type lineMan struct {
@@ -41,9 +42,28 @@ func (lm *lineMan) Delivery(data map[string]string) error {
 	}
 	return nil
 }
-func NewLineMan(receiver string) (DeliveryMan, error) {
+func (lm *lineMan) DeliveryBody(data [][]byte) error {
+	for _, value := range data {
+		request := lm.httpclient.R()
+		request.Method = lm.methodSend
+		request.URL = lm.receiver
+		request.SetHeader("Content-Type", "application/json")
+		request.SetBody(value)
+		response, err := request.Send()
+		if err != nil {
+			return err
+		}
+		if response.StatusCode() != http.StatusOK {
+			return fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
+		}
+
+	}
+	return nil
+}
+func NewLineMan(receiver, method string) (DeliveryMan, error) {
 	return &lineMan{
 		receiver:   receiver,
 		httpclient: resty.New(),
+		methodSend: method,
 	}, nil
 }

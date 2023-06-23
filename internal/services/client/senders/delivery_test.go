@@ -3,9 +3,9 @@ package senders
 import (
 	"fmt"
 	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
-	"github.com/antoniokichaev/go-alert-me/internal/entity"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
+	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -77,7 +77,7 @@ func TestLineMan_Delivery(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockStore.On("AddCounter", &entity.Counter{Name: "ram", Value: int64(55)}).Maybe().Return(nil)
+			mockStore.On("AddCounter", &metrics.Counter{Name: "ram", Value: int64(55)}).Maybe().Return(&metrics.Counter{}, nil)
 			lm := &lineMan{
 				receiver:   tt.fields.receiver,
 				httpclient: tt.fields.httpclient,

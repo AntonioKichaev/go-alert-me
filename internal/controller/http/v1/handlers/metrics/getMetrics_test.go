@@ -3,9 +3,9 @@ package metrics_test
 import (
 	"errors"
 	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
-	"github.com/antoniokichaev/go-alert-me/internal/entity"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
+	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +17,7 @@ import (
 )
 
 const _contentTypeText = "text/plain; charset=utf-8"
+const _contentTypeJSON = "application/json"
 
 func getServer(mockStore *mocks.Keeper) *httptest.Server {
 	getterUc := usecase.NewReceiver(mockStore)
@@ -55,7 +56,7 @@ func TestGetMetrics(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
 				args:        []any{"my"},
-				returnValue: []any{&entity.Counter{Name: "my", Value: 5}, nil},
+				returnValue: []any{&metrics.Counter{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
 		},
@@ -67,7 +68,7 @@ func TestGetMetrics(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getGauge,
 				args:        []any{"my"},
-				returnValue: []any{&entity.Gauge{Name: "my", Value: 5}, nil},
+				returnValue: []any{&metrics.Gauge{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
 		},
@@ -145,4 +146,101 @@ func TestGetAllMetrics(t *testing.T) {
 		})
 	}
 
+}
+
+func TestGetMetricsJSON(t *testing.T) {
+	mockStore := mocks.NewKeeper(t)
+	srv := getServer(mockStore)
+	defer srv.Close()
+
+	const _getGauge = "GetGauge"
+	const _getCounter = "GetCounter"
+	type mockStoreRequest struct {
+		methodName  string
+		args        []any
+		returnValue []any
+	}
+
+	tt := map[string]struct {
+		method       string
+		targetURL    string
+		statusCode   int
+		contentType  string
+		wantErr      bool
+		mockStore    mockStoreRequest
+		jsonBody     string
+		jsonResponse string
+	}{
+		"exist counter": {
+			method:      http.MethodPost,
+			targetURL:   "/value/",
+			statusCode:  http.StatusOK,
+			contentType: _contentTypeJSON,
+			mockStore: mockStoreRequest{
+				methodName:  _getCounter,
+				args:        []any{"my"},
+				returnValue: []any{&metrics.Counter{Name: "my", Value: 5}, nil},
+			},
+			wantErr:      false,
+			jsonBody:     `{"id":"my","type":"counter"}`,
+			jsonResponse: `{"id":"my","type":"counter", "delta":5 }`,
+		},
+		"exist gauge": {
+			method:      http.MethodPost,
+			targetURL:   "/value/",
+			statusCode:  http.StatusOK,
+			contentType: _contentTypeJSON,
+			mockStore: mockStoreRequest{
+				methodName:  _getGauge,
+				args:        []any{"my"},
+				returnValue: []any{&metrics.Gauge{Name: "my", Value: 5}, nil},
+			},
+			wantErr:      false,
+			jsonBody:     `{"id":"my","type":"gauge"}`,
+			jsonResponse: `{"id":"my","type":"gauge", "value":5 }`,
+		},
+		"doesn't exist ": {
+			method:      http.MethodPost,
+			targetURL:   "/value/",
+			statusCode:  http.StatusNotFound,
+			contentType: "",
+			wantErr:     true,
+			mockStore: mockStoreRequest{
+				methodName:  _getCounter,
+				args:        []any{"unk"},
+				returnValue: []any{nil, errors.New("NotFound")},
+			},
+			jsonBody:     `{"id":"unk","type":"counter"}`,
+			jsonResponse: ``,
+		},
+	}
+
+	for key, tc := range tt {
+		t.Run(key, func(t *testing.T) {
+			if len(tc.mockStore.args) != 0 || tc.mockStore.methodName != "" {
+				mockStore.On(tc.mockStore.methodName, tc.mockStore.args...).Return(tc.mockStore.returnValue...)
+			}
+
+			request := resty.New().R()
+			request.Method = tc.method
+			u, err := url.JoinPath(srv.URL, tc.targetURL)
+			assert.NoError(t, err)
+			request.URL = u
+			if len(tc.jsonBody) > 0 {
+				request.SetBody(tc.jsonBody)
+
+			}
+			response, err := request.Send()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.statusCode, response.StatusCode())
+			assert.Equal(t, tc.contentType, response.Header().Get("Content-Type"))
+			if len(tc.jsonResponse) > 0 {
+				assert.JSONEq(t, tc.jsonResponse, string(response.Body()))
+			} else {
+				assert.Equal(t, tc.jsonResponse, string(response.Body()))
+			}
+			mockStore.AssertExpectations(t)
+
+		})
+	}
 }

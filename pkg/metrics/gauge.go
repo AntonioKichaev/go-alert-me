@@ -1,6 +1,8 @@
-package entity
+package metrics
 
-import "strconv"
+import (
+	"strconv"
+)
 
 type Gauge struct {
 	Name  string

@@ -5,10 +5,11 @@ import (
 	"github.com/antoniokichaev/go-alert-me/config/agent"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client"
 	"github.com/antoniokichaev/go-alert-me/internal/services/client/agent"
+	"net/http"
 	"net/url"
 )
 
-const _endPointUpdateValue = "/update"
+const _endPointUpdateValue = "/update/"
 
 func main() {
 	agentConfig := config.NewAgentConfig()
@@ -22,7 +23,7 @@ func main() {
 	}
 	ag := agent.NewAgentMetric(
 		agent.SetName("anton"),
-		agent.InitDeliveryAddress(diliveryAddress),
+		agent.InitDeliveryAddress(diliveryAddress, http.MethodPost),
 		agent.SetReportInterval(reportInterval),
 		agent.SetPollInterval(pollInterval),
 		agent.SetMetricsNumber(len(client.AllowGaugeMetric)),

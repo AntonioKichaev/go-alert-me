@@ -59,6 +59,48 @@ func (_c *DeliveryMan_Delivery_Call) RunAndReturn(run func(map[string]string) er
 	return _c
 }
 
+// DeliveryBody provides a mock function with given fields: _a0
+func (_m *DeliveryMan) DeliveryBody(_a0 [][]byte) error {
+	ret := _m.Called(_a0)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func([][]byte) error); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeliveryMan_DeliveryBody_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeliveryBody'
+type DeliveryMan_DeliveryBody_Call struct {
+	*mock.Call
+}
+
+// DeliveryBody is a helper method to define mock.On call
+//   - _a0 [][]byte
+func (_e *DeliveryMan_Expecter) DeliveryBody(_a0 interface{}) *DeliveryMan_DeliveryBody_Call {
+	return &DeliveryMan_DeliveryBody_Call{Call: _e.mock.On("DeliveryBody", _a0)}
+}
+
+func (_c *DeliveryMan_DeliveryBody_Call) Run(run func(_a0 [][]byte)) *DeliveryMan_DeliveryBody_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].([][]byte))
+	})
+	return _c
+}
+
+func (_c *DeliveryMan_DeliveryBody_Call) Return(_a0 error) *DeliveryMan_DeliveryBody_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *DeliveryMan_DeliveryBody_Call) RunAndReturn(run func([][]byte) error) *DeliveryMan_DeliveryBody_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 type mockConstructorTestingTNewDeliveryMan interface {
 	mock.TestingT
 	Cleanup(func())

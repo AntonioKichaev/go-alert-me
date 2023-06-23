@@ -2,9 +2,9 @@ package v1gin
 
 import (
 	"fmt"
-	"github.com/antoniokichaev/go-alert-me/internal/entity"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
+	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -54,8 +54,8 @@ func TestUpdateMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName: _addCounter,
-				args:       []any{&entity.Counter{Name: "1", Value: 2}},
-				returnArgs: []any{nil},
+				args:       []any{&metrics.Counter{Name: "1", Value: 2}},
+				returnArgs: []any{&metrics.Counter{Name: "1", Value: 2}, nil},
 			},
 		},
 		"zero_value ": {
@@ -91,8 +91,8 @@ func TestUpdateMetrics(t *testing.T) {
 			statusCode:  http.StatusOK,
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{methodName: _addCounter,
-				args:       []any{&entity.Counter{Name: "ram", Value: int64(-5)}},
-				returnArgs: []any{nil},
+				args:       []any{&metrics.Counter{Name: "ram", Value: int64(-5)}},
+				returnArgs: []any{&metrics.Counter{Name: "ram", Value: int64(-5)}, nil},
 			},
 		},
 		"negative_float_value ": {
@@ -109,8 +109,8 @@ func TestUpdateMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName: _setGauge,
-				args:       []any{&entity.Gauge{Name: "ram", Value: 999.5999}},
-				returnArgs: []any{nil},
+				args:       []any{&metrics.Gauge{Name: "ram", Value: 999.5999}},
+				returnArgs: []any{&metrics.Gauge{Name: "ram", Value: 999.5999}, nil},
 			},
 		},
 		"none_value_set_gauge ": {

@@ -2,12 +2,13 @@ package memstorage
 
 import (
 	"errors"
-	"github.com/antoniokichaev/go-alert-me/internal/entity"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
+	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"strconv"
 )
 
 var ErrorNotExistMetric = errors.New("doesn't exist metric")
+
 //go:generate mockery --name Keeper
 type Keeper interface {
 	usecase.UpdaterRepo
@@ -29,28 +30,30 @@ func newMemStorage() *MemStorage {
 	}
 }
 
-func (m *MemStorage) GetCounter(name string) (*entity.Counter, error) {
+func (m *MemStorage) GetCounter(name string) (*metrics.Counter, error) {
 	if val, ok := m.storeCounter[name]; ok {
-		return entity.NewCounter(name, val)
+		return metrics.NewCounter(name, val)
 	}
 	return nil, ErrorNotExistMetric
 }
 
-func (m *MemStorage) GetGauge(name string) (*entity.Gauge, error) {
+func (m *MemStorage) GetGauge(name string) (*metrics.Gauge, error) {
 	if val, ok := m.storeGauge[name]; ok {
-		return entity.NewGauge(name, val)
+		return metrics.NewGauge(name, val)
 	}
 	return nil, ErrorNotExistMetric
 }
 
-func (m *MemStorage) AddCounter(counter *entity.Counter) error {
+func (m *MemStorage) AddCounter(counter *metrics.Counter) (*metrics.Counter, error) {
 	m.storeCounter[counter.GetName()] += counter.GetValue()
-	return nil
+	counter.SetValue(m.storeCounter[counter.GetName()])
+	return counter, nil
 
 }
-func (m *MemStorage) SetGauge(gauge *entity.Gauge) error {
+func (m *MemStorage) SetGauge(gauge *metrics.Gauge) (*metrics.Gauge, error) {
 	m.storeGauge[gauge.GetName()] = gauge.GetValue()
-	return nil
+
+	return gauge, nil
 }
 
 func (m *MemStorage) GetMetrics() (map[string]string, error) {

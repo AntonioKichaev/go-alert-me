@@ -1,4 +1,4 @@
-package entity
+package metrics
 
 func isValidName(name string) error {
 	if name == "" {
