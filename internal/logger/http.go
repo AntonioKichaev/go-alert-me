@@ -16,7 +16,7 @@ func (lrw *loggingResponseWriter) Write(b []byte) (int, error) {
 	lrw.Rd.Size += size
 	return size, err
 }
-func (lwr *loggingResponseWriter) WriteHeader(statusCode int) {
-	lwr.ResponseWriter.WriteHeader(statusCode)
-	lwr.Rd.Status = statusCode
+func (lrw *loggingResponseWriter) WriteHeader(statusCode int) {
+	lrw.ResponseWriter.WriteHeader(statusCode)
+	lrw.Rd.Status = statusCode
 }
