@@ -92,26 +92,7 @@ func (h *updaterRoutes) updateMetricsJSON(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if err == nil {
-		err = m.IsValid()
-	}
-	if err == nil {
-		switch metrics.MetricType(m.MType) {
-		case metrics.GaugeName:
-			g, err := h.uc.SetGauge(m.ID, *m.Value)
-			if err == nil {
-				m.SetGauge(g)
-			}
-		case metrics.CounterName:
-			c, err := h.uc.AddCounter(m.ID, *m.Delta)
-			if err == nil {
-				m.SetCounter(c)
-			}
-		default:
-			err = metrics.ErrorUnknownMetricType
-		}
-	}
-
+	err = m.IsValid()
 	if err != nil {
 		if errors.Is(err, metrics.ErrorName) {
 			w.WriteHeader(_zeroMetricName)
@@ -128,6 +109,21 @@ func (h *updaterRoutes) updateMetricsJSON(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	switch metrics.MetricType(m.MType) {
+	case metrics.GaugeName:
+		g, err := h.uc.SetGauge(m.ID, *m.Value)
+		if err != nil {
+			return
+		}
+		m.SetGauge(g)
+	case metrics.CounterName:
+		c, err := h.uc.AddCounter(m.ID, *m.Delta)
+		if err != nil {
+			return
+		}
+		m.SetCounter(c)
+	}
+
 	result, err := json.Marshal(m)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

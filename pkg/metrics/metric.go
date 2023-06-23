@@ -64,9 +64,13 @@ func (m *Metrics) IsValid() error {
 	if len(m.ID) == 0 {
 		return fmt.Errorf("%w metrics.IsValid() ID: %v", ErrorName, m.ID)
 	}
-	if len(m.MType) == 0 {
+	switch MetricType(m.MType) {
+	case GaugeName, CounterName:
+	default:
 		return fmt.Errorf("%w metrics.IsValid() type: %v", ErrorUnknownMetricType, m.MType)
+
 	}
+
 	if m.Value == nil && m.Delta == nil {
 		return fmt.Errorf("%w metrics.IsValid() value: %v delta: %v", ErrorBadValue, m.Value, m.Delta)
 	}
