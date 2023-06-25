@@ -15,6 +15,7 @@ build_server: prepare
 build_client: prepare
 	go build -o $(AGENT_PATH) $(AGENT_BUILD_PATH)
 
+
 iter1: build_server build_client
 	metricstest -test.v -test.run=^TestIteration1$$ \
                 -binary-path=$(SERVER_PATH)
@@ -58,4 +59,11 @@ iter7: build_server build_client
 			-binary-path=$(SERVER_PATH) \
 			-server-port=$(SERVER_PORT) \
 			-source-path=.
-all: iter1 iter2 iter3 iter4 iter5 iter6 iter7
+
+iter8: build_server build_client
+	metricstest -test.v -test.run=^TestIteration8$$ \
+                -agent-binary-path=$(AGENT_PATH) \
+				-binary-path=$(SERVER_PATH) \
+				-server-port=$(SERVER_PORT) \
+				-source-path=.
+all: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8

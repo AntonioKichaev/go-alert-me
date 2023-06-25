@@ -55,9 +55,9 @@ func (h *hadlerReciever) getMetricByName(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	_, _ = w.Write([]byte(result))
 	w.Header().Set("Content-Type", _contentTypeText)
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(result))
 
 }
 
@@ -105,8 +105,8 @@ func (h *hadlerReciever) getMetricByNameJSON(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	w.Header().Set("Content-Type", _contentTypeJSON)
-	_, _ = w.Write(result)
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(result)
 	fmt.Println("cinten result ok", "content", _contentTypeJSON)
 
 }
@@ -117,10 +117,15 @@ func (h *hadlerReciever) getMetrics(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	result := ""
+	result := "<table>"
 	for key, value := range metrics {
-		result = fmt.Sprintf("%s%s %s\n", result, key, value)
+		result = fmt.Sprintf("%s <tr><td>%s</td> <td>%s</td></tr>", result, key, value)
 	}
+	result += "</table>"
+	w.Header().Set("Content-Type", _contentTypeHTML)
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(result))
+	if len(metrics) != 0 {
+		result = fmt.Sprintf("<html><body>%s</body></html>", result)
+		_, _ = w.Write([]byte(result))
+	}
 }

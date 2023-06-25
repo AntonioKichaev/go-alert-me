@@ -2,11 +2,17 @@ package server
 
 import (
 	"fmt"
+	"go.uber.org/zap/zapcore"
 )
 
 type Option func(server *Server)
 type Server struct {
 	HTTPServerAdr string `env:"ADDRESS"`
+}
+
+func (srv *Server) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
+	encoder.AddString("HTTPServerAdr", srv.HTTPServerAdr)
+	return nil
 }
 
 func (srv *Server) GetMyAddress() string {

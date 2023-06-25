@@ -2,11 +2,13 @@ package agent
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client/senders"
+	"github.com/antoniokichaev/go-alert-me/internal/client"
+	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers"
+	"github.com/antoniokichaev/go-alert-me/internal/client/senders"
+	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
+	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
+	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,52 +33,7 @@ type agentBond struct {
 	delivery       senders.DeliveryMan
 	grabber        grabbers.Grabber
 	notify         <-chan struct{}
-}
-type Option func(agent *agentBond)
-
-func SetNotifyChan(ch chan struct{}) Option {
-	return func(agent *agentBond) {
-		agent.notify = ch
-	}
-}
-func SetMetricsNumber(num int) Option {
-	return func(agent *agentBond) {
-		agent.metricsNumbers = num
-
-	}
-}
-
-func SetName(name string) Option {
-	return func(agent *agentBond) {
-		agent.name = name
-
-	}
-}
-func InitDeliveryAddress(address, method string) Option {
-	return func(agent *agentBond) {
-		delivery, err := senders.NewLineMan(address, method) //todo: чо-то с ошибкой делать
-		if err != nil {
-			panic(fmt.Errorf("InitDeliveryAddress:%w", err))
-		}
-		agent.delivery = delivery
-
-	}
-}
-func SetReportInterval(sec int64) Option {
-	return func(agent *agentBond) {
-		agent.reportInterval = time.Duration(sec) * time.Second
-	}
-}
-func SetPollInterval(sec int64) Option {
-	return func(agent *agentBond) {
-		agent.pollInterval = time.Duration(sec) * time.Second
-	}
-}
-
-func SetGrabber() Option {
-	return func(agent *agentBond) {
-		agent.grabber = grabbers.NewRacoon()
-	}
+	zipper         mgzip.Zipper
 }
 
 func NewAgentMetric(opts ...Option) Agent {
@@ -110,10 +67,9 @@ func (agent *agentBond) Run() {
 			data := agent.makeFormatToSend()
 			if len(data) > 0 {
 				err := agent.delivery.DeliveryBody(data)
-				fmt.Println(err)
-			} else {
-
-				fmt.Println("Nothind to send")
+				if err != nil {
+					logger.Log.Error("agent.Run() delivery err:=", zap.Error(err))
+				}
 			}
 			agent.resetState()
 		case <-pollTicker.C:

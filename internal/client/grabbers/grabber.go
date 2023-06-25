@@ -24,14 +24,6 @@ type racoon struct {
 	allowMetrics map[string]struct{}
 }
 
-type Option func(rac *racoon)
-
-func SetAllowMetrics(metrics map[string]struct{}) Option {
-	return func(rac *racoon) {
-		rac.allowMetrics = metrics
-	}
-}
-
 func NewRacoon(opts ...Option) Grabber {
 	rn := &racoon{
 		random: rand.New(rand.NewSource(322)),

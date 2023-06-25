@@ -19,6 +19,7 @@ const (
 	_incorrectMetricValue = http.StatusNotFound
 	_contentTypeText      = "text/plain; charset=utf-8"
 	_contentTypeJSON      = "application/json"
+	_contentTypeHTML      = "text/html"
 	_metricType           = "MetricType"
 	_metricName           = "MetricName"
 	_metricValue          = "MetricValue"
@@ -130,7 +131,7 @@ func (h *updaterRoutes) updateMetricsJSON(w http.ResponseWriter, r *http.Request
 		return
 	}
 	w.Header().Set("Content-Type", _contentTypeJSON)
-	_, _ = w.Write(result)
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(result)
 
 }

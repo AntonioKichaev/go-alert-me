@@ -7,8 +7,8 @@ import (
 	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	memstorage "github.com/antoniokichaev/go-alert-me/internal/usecase/repo"
+	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -16,14 +16,15 @@ import (
 func main() {
 	serverConfig := configSrv.NewServerConfig()
 	configSrv.ParseFlag(serverConfig)
-	fmt.Println("config server", serverConfig)
 	mu := chi.NewRouter()
 	err := logger.Initialize("INFO")
+	logger.Log.Info("config server", zap.Object("config", serverConfig))
 	if err != nil {
 		panic(err)
 	}
 
-	mu.Use(middleware.Logger)
+	mu.Use(logger.LogMiddleware)
+	mu.Use(mgzip.GzipMiddleware)
 	storeKeeper := memstorage.NewMemStorage()
 	{
 		updaterUc := usecase.NewUpdater(storeKeeper)

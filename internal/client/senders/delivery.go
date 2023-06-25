@@ -3,7 +3,11 @@ package senders
 import (
 	"errors"
 	"fmt"
+	"github.com/antoniokichaev/go-alert-me/internal/logger"
+	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/go-resty/resty/v2"
+	"go.uber.org/zap"
+	"go.uber.org/zap/buffer"
 	"net/http"
 	"net/url"
 )
@@ -18,6 +22,7 @@ type lineMan struct {
 	receiver   string
 	httpclient *resty.Client
 	methodSend string
+	zipper     mgzip.Zipper
 }
 
 var ErrorStatusCode = errors.New("delivery status code")
@@ -42,28 +47,58 @@ func (lm *lineMan) Delivery(data map[string]string) error {
 	}
 	return nil
 }
-func (lm *lineMan) DeliveryBody(data [][]byte) error {
-	for _, value := range data {
+func (lm *lineMan) DeliveryBody(mData [][]byte) error {
+	var buf buffer.Buffer
+	for _, data := range mData {
+		buf.Reset()
 		request := lm.httpclient.R()
 		request.Method = lm.methodSend
 		request.URL = lm.receiver
 		request.SetHeader("Content-Type", "application/json")
-		request.SetBody(value)
+
+		if lm.zipper != nil {
+			v, err := lm.zipper.Compress(data)
+			if err != nil {
+				logger.Log.Error("can't compress", zap.Error(err))
+				continue
+			}
+			_, err = buf.Write(v)
+			if err != nil {
+				logger.Log.Error("can't write buffer", zap.Error(err))
+				continue
+			}
+			request.SetHeader("Content-Encoding", lm.zipper.GetEncoding())
+		} else {
+			_, err := buf.Write(data)
+			if err != nil {
+				logger.Log.Error("can't write buffer", zap.Error(err))
+				continue
+			}
+		}
+		request.SetBody(buf)
 		response, err := request.Send()
 		if err != nil {
 			return err
 		}
 		if response.StatusCode() != http.StatusOK {
-			return fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
+
+			err = fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
+			logger.Log.Error("DeliveryBody() statusCode: ", zap.Error(err))
+			return err
 		}
 
 	}
 	return nil
 }
-func NewLineMan(receiver, method string) (DeliveryMan, error) {
-	return &lineMan{
-		receiver:   receiver,
+func NewLineMan(opts ...Option) (DeliveryMan, error) {
+	l := &lineMan{
 		httpclient: resty.New(),
-		methodSend: method,
-	}, nil
+		zipper:     mgzip.NewGZipper(),
+	}
+
+	for _, opt := range opts {
+		opt(l)
+	}
+
+	return l, nil
 }

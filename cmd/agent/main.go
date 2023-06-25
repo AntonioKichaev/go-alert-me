@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/antoniokichaev/go-alert-me/config/agent"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client/agent"
+	"github.com/antoniokichaev/go-alert-me/internal/client"
+	"github.com/antoniokichaev/go-alert-me/internal/client/agent"
+	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"net/http"
 	"net/url"
 )
@@ -17,13 +18,15 @@ func main() {
 	pollInterval := agentConfig.GetPollIntervalSecond()
 	reportInterval := agentConfig.GetReportIntervalSecond()
 	fmt.Println("config agent", agentConfig)
-	diliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
+	deliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
+	zipper := mgzip.NewGZipper()
 	if err != nil {
 		panic(err)
 	}
 	ag := agent.NewAgentMetric(
 		agent.SetName("anton"),
-		agent.InitDeliveryAddress(diliveryAddress, http.MethodPost),
+		agent.SetZipper(zipper),
+		agent.InitDeliveryAddress(deliveryAddress, http.MethodPost),
 		agent.SetReportInterval(reportInterval),
 		agent.SetPollInterval(pollInterval),
 		agent.SetMetricsNumber(len(client.AllowGaugeMetric)),

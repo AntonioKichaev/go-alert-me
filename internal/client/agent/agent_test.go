@@ -1,10 +1,10 @@
 package agent
 
 import (
-	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client/grabbers/mocks"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client/senders"
-	smocks "github.com/antoniokichaev/go-alert-me/internal/services/client/senders/mocks"
+	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers"
+	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers/mocks"
+	"github.com/antoniokichaev/go-alert-me/internal/client/senders"
+	smocks "github.com/antoniokichaev/go-alert-me/internal/client/senders/mocks"
 	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
