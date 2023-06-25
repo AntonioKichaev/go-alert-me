@@ -5,6 +5,7 @@ SERVER_BUILD_PATH=./cmd/server/main.go
 SERVER_PATH=./cmd/server/server
 SERVER_PORT=8080
 ADDRESS="localhost:$(SERVER_PORT)"
+LOGGING_LEVEL="FATAL"
 prepare:
 	go mod tidy
 

@@ -1,13 +1,13 @@
 package senders
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
-	"go.uber.org/zap/buffer"
 	"net/http"
 	"net/url"
 )
@@ -47,8 +47,10 @@ func (lm *lineMan) Delivery(data map[string]string) error {
 	}
 	return nil
 }
+
 func (lm *lineMan) DeliveryBody(mData [][]byte) error {
-	var buf buffer.Buffer
+
+	var buf bytes.Buffer
 	for _, data := range mData {
 		buf.Reset()
 		request := lm.httpclient.R()
@@ -62,26 +64,15 @@ func (lm *lineMan) DeliveryBody(mData [][]byte) error {
 				logger.Log.Error("can't compress", zap.Error(err))
 				continue
 			}
-			_, err = buf.Write(v)
-			if err != nil {
-				logger.Log.Error("can't write buffer", zap.Error(err))
-				continue
-			}
 			request.SetHeader("Content-Encoding", lm.zipper.GetEncoding())
-		} else {
-			_, err := buf.Write(data)
-			if err != nil {
-				logger.Log.Error("can't write buffer", zap.Error(err))
-				continue
-			}
+			buf.Write(v)
 		}
-		request.SetBody(buf)
+		request.SetBody(buf.Bytes())
 		response, err := request.Send()
 		if err != nil {
 			return err
 		}
 		if response.StatusCode() != http.StatusOK {
-
 			err = fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
 			logger.Log.Error("DeliveryBody() statusCode: ", zap.Error(err))
 			return err
