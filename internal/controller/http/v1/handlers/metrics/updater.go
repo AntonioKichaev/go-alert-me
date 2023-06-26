@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
+	metricsEntity "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/go-chi/chi/v5"
 	"io"
@@ -43,30 +43,30 @@ func (h *updaterRoutes) updateMetrics(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, _metricType)
 	metricName := chi.URLParam(r, _metricName)
 	metricValue := chi.URLParam(r, _metricValue)
-	m, err := metrics2.NewMetrics(metricType, metricName, metricValue)
+	m, err := metricsEntity.NewMetrics(metricType, metricName, metricValue)
 	if err == nil {
-		switch metrics2.MetricType(m.MType) {
-		case metrics2.GaugeName:
+		switch metricsEntity.MetricType(m.MType) {
+		case metricsEntity.GaugeName:
 			g, err := h.uc.SetGauge(m.ID, *m.Value)
 			if err == nil {
 				m.SetGauge(g)
 			}
-		case metrics2.CounterName:
+		case metricsEntity.CounterName:
 			c, err := h.uc.AddCounter(m.ID, *m.Delta)
 			if err == nil {
 				m.SetCounter(c)
 			}
 		default:
-			err = metrics2.ErrorUnknownMetricType
+			err = metricsEntity.ErrorUnknownMetricType
 		}
 	}
 
 	if err != nil {
-		if errors.Is(err, metrics2.ErrorName) {
+		if errors.Is(err, metricsEntity.ErrorName) {
 			w.WriteHeader(_zeroMetricName)
 			return
 		}
-		if errors.Is(err, metrics2.ErrorUnknownMetricType) {
+		if errors.Is(err, metricsEntity.ErrorUnknownMetricType) {
 			w.WriteHeader(_incorrectMetricType)
 			return
 		}
@@ -81,7 +81,7 @@ func (h *updaterRoutes) updateMetrics(w http.ResponseWriter, r *http.Request) {
 
 // updateMetricsJSON принимает запрос ввида /update и body metrics struct
 func (h *updaterRoutes) updateMetricsJSON(w http.ResponseWriter, r *http.Request) {
-	m := &metrics2.Metrics{}
+	m := &metricsEntity.Metrics{}
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -95,29 +95,29 @@ func (h *updaterRoutes) updateMetricsJSON(w http.ResponseWriter, r *http.Request
 	}
 	err = m.IsValid()
 	if err != nil {
-		if errors.Is(err, metrics2.ErrorName) {
+		if errors.Is(err, metricsEntity.ErrorName) {
 			w.WriteHeader(_zeroMetricName)
 			return
 		}
-		if errors.Is(err, metrics2.ErrorUnknownMetricType) {
+		if errors.Is(err, metricsEntity.ErrorUnknownMetricType) {
 			w.WriteHeader(_incorrectMetricType)
 			return
 		}
-		if errors.Is(err, metrics2.ErrorBadValue) {
+		if errors.Is(err, metricsEntity.ErrorBadValue) {
 			w.WriteHeader(_incorrectMetricValue)
 			return
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	switch metrics2.MetricType(m.MType) {
-	case metrics2.GaugeName:
+	switch metricsEntity.MetricType(m.MType) {
+	case metricsEntity.GaugeName:
 		g, err := h.uc.SetGauge(m.ID, *m.Value)
 		if err != nil {
 			return
 		}
 		m.SetGauge(g)
-	case metrics2.CounterName:
+	case metricsEntity.CounterName:
 		c, err := h.uc.AddCounter(m.ID, *m.Delta)
 		if err != nil {
 			return

@@ -6,8 +6,11 @@ import (
 )
 
 type Server struct {
-	HTTPServerAdr string `env:"ADDRESS"`
-	LoggingLevel  string `env:"LOGGING_LEVEL"`
+	HTTPServerAdr       string `env:"ADDRESS"`
+	LoggingLevel        string `env:"LOGGING_LEVEL"`
+	StoreIntervalSecond int    `env:"STORE_INTERVAL"`
+	FileStoragePath     string `env:"FILE_STORAGE_PATH"`
+	Restore             bool   `env:"RESTORE"`
 }
 
 func (srv *Server) MarshalLogObject(encoder zapcore.ObjectEncoder) error {

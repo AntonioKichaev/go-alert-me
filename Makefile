@@ -6,6 +6,7 @@ SERVER_PATH=./cmd/server/server
 SERVER_PORT=8080
 ADDRESS="localhost:$(SERVER_PORT)"
 LOGGING_LEVEL="FATAL"
+TEMP_FILE=./cmd/server/tmp.json
 prepare:
 	go mod tidy
 
@@ -67,4 +68,11 @@ iter8: build_server build_client
 				-binary-path=$(SERVER_PATH) \
 				-server-port=$(SERVER_PORT) \
 				-source-path=.
-all: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8
+iter9: build_server build_client
+	metricstest -test.v -test.run=^TestIteration9$$ \
+                -agent-binary-path=$(AGENT_PATH) \
+				-binary-path=$(SERVER_PATH) \
+				-server-port=$(SERVER_PORT) \
+				-file-storage-path=${TEMP_FILE} \
+				-source-path=.
+all: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9

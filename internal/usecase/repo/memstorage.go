@@ -4,10 +4,9 @@ import (
 	"errors"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
+	"github.com/antoniokichaev/go-alert-me/pkg/memorystorage"
 	"strconv"
 )
-
-var ErrorNotExistMetric = errors.New("doesn't exist metric")
 
 //go:generate mockery --name Keeper
 type Keeper interface {
@@ -16,54 +15,63 @@ type Keeper interface {
 }
 
 type MemStorage struct {
-	storeCounter map[string]int64
-	storeGauge   map[string]float64
+	storeCounter *memorystorage.MemoryStorage
+	storeGauge   *memorystorage.MemoryStorage
 }
 
-func NewMemStorage() Keeper {
-	return newMemStorage()
+func NewMemStorage(storeCounter, storeGauge *memorystorage.MemoryStorage) Keeper {
+	return newMemStorage(storeCounter, storeGauge)
 }
-func newMemStorage() *MemStorage {
+func newMemStorage(storeCounter, storeGauge *memorystorage.MemoryStorage) *MemStorage {
 	return &MemStorage{
-		storeCounter: make(map[string]int64, 5),
-		storeGauge:   make(map[string]float64, 5),
+		storeCounter: storeCounter,
+		storeGauge:   storeGauge,
 	}
 }
 
 func (m *MemStorage) GetCounter(name string) (*metrics2.Counter, error) {
-	if val, ok := m.storeCounter[name]; ok {
+	if val, err := m.storeCounter.Get(name); err != nil {
+		return nil, err
+	} else {
 		return metrics2.NewCounter(name, val)
 	}
-	return nil, ErrorNotExistMetric
 }
 
 func (m *MemStorage) GetGauge(name string) (*metrics2.Gauge, error) {
-	if val, ok := m.storeGauge[name]; ok {
+	if val, err := m.storeGauge.Get(name); err != nil {
+		return nil, err
+	} else {
 		return metrics2.NewGauge(name, val)
 	}
-	return nil, ErrorNotExistMetric
 }
 
 func (m *MemStorage) AddCounter(counter *metrics2.Counter) (*metrics2.Counter, error) {
-	m.storeCounter[counter.GetName()] += counter.GetValue()
-	counter.SetValue(m.storeCounter[counter.GetName()])
-	return counter, nil
+	old, err := m.GetCounter(counter.GetName())
+	if errors.Is(err, memorystorage.ErrorNotExistMetric) {
+		old, _ = metrics2.NewCounter(counter.GetName(), 0)
+
+	} else if err != nil {
+		return nil, err
+	}
+	counter.SetValue(old.GetValue() + counter.GetValue())
+	err = m.storeCounter.Set(counter.GetName(), strconv.FormatInt(counter.GetValue(), 10))
+	return counter, err
 
 }
 func (m *MemStorage) SetGauge(gauge *metrics2.Gauge) (*metrics2.Gauge, error) {
-	m.storeGauge[gauge.GetName()] = gauge.GetValue()
-
-	return gauge, nil
+	err := m.storeGauge.Set(gauge.GetName(), strconv.FormatFloat(gauge.GetValue(), 'f', -1, 64))
+	return gauge, err
 }
 
 func (m *MemStorage) GetMetrics() (map[string]string, error) {
-	result := make(map[string]string, len(m.storeGauge)+len(m.storeCounter))
-	for key, val := range m.storeGauge {
-		result[key] = strconv.FormatFloat(val, 'g', -1, 64)
-
+	g := m.storeGauge.GetDump()
+	c := m.storeCounter.GetDump()
+	result := make(map[string]string, len(g)+len(c))
+	for key, val := range g {
+		result[key] = val
 	}
-	for key, val := range m.storeCounter {
-		result[key] = strconv.FormatInt(val, 10)
+	for key, val := range c {
+		result[key] = val
 	}
 	return result, nil
 }
