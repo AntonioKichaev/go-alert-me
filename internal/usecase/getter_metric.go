@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
+	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 )
 
 type ReceiverMetricUseCase struct {
@@ -13,10 +13,10 @@ func NewReceiver(repo ReceiverMetricRepo) *ReceiverMetricUseCase {
 	return rmu
 }
 
-func (receiver *ReceiverMetricUseCase) GetCounter(name string) (*metrics.Counter, error) {
+func (receiver *ReceiverMetricUseCase) GetCounter(name string) (*metrics2.Counter, error) {
 	return receiver.repo.GetCounter(name)
 }
-func (receiver *ReceiverMetricUseCase) GetGauge(name string) (*metrics.Gauge, error) {
+func (receiver *ReceiverMetricUseCase) GetGauge(name string) (*metrics2.Gauge, error) {
 	return receiver.repo.GetGauge(name)
 }
 

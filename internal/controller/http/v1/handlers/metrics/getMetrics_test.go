@@ -3,9 +3,9 @@ package metrics_test
 import (
 	"errors"
 	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
-	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -56,7 +56,7 @@ func TestGetMetrics(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
 				args:        []any{"my"},
-				returnValue: []any{&metrics.Counter{Name: "my", Value: 5}, nil},
+				returnValue: []any{&metrics2.Counter{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
 		},
@@ -68,7 +68,7 @@ func TestGetMetrics(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getGauge,
 				args:        []any{"my"},
-				returnValue: []any{&metrics.Gauge{Name: "my", Value: 5}, nil},
+				returnValue: []any{&metrics2.Gauge{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
 		},
@@ -179,7 +179,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
 				args:        []any{"my"},
-				returnValue: []any{&metrics.Counter{Name: "my", Value: 5}, nil},
+				returnValue: []any{&metrics2.Counter{Name: "my", Value: 5}, nil},
 			},
 			wantErr:      false,
 			jsonBody:     `{"id":"my","type":"counter"}`,
@@ -193,7 +193,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			mockStore: mockStoreRequest{
 				methodName:  _getGauge,
 				args:        []any{"my"},
-				returnValue: []any{&metrics.Gauge{Name: "my", Value: 5}, nil},
+				returnValue: []any{&metrics2.Gauge{Name: "my", Value: 5}, nil},
 			},
 			wantErr:      false,
 			jsonBody:     `{"id":"my","type":"gauge"}`,

@@ -1,29 +1,29 @@
 package usecase
 
 import (
-	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
+	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 )
 
 type (
 	Updater interface {
-		AddCounter(name string, value any) (*metrics.Counter, error)
-		SetGauge(name string, value any) (*metrics.Gauge, error)
+		AddCounter(name string, value any) (*metrics2.Counter, error)
+		SetGauge(name string, value any) (*metrics2.Gauge, error)
 	}
 	UpdaterRepo interface {
-		AddCounter(counter *metrics.Counter) (*metrics.Counter, error)
-		SetGauge(gauge *metrics.Gauge) (*metrics.Gauge, error)
+		AddCounter(counter *metrics2.Counter) (*metrics2.Counter, error)
+		SetGauge(gauge *metrics2.Gauge) (*metrics2.Gauge, error)
 	}
 )
 
 type (
 	ReceiverMetric interface {
-		GetCounter(name string) (*metrics.Counter, error)
-		GetGauge(name string) (*metrics.Gauge, error)
+		GetCounter(name string) (*metrics2.Counter, error)
+		GetGauge(name string) (*metrics2.Gauge, error)
 		GetMetrics() (map[string]string, error)
 	}
 	ReceiverMetricRepo interface {
-		GetCounter(name string) (*metrics.Counter, error)
-		GetGauge(name string) (*metrics.Gauge, error)
+		GetCounter(name string) (*metrics2.Counter, error)
+		GetGauge(name string) (*metrics2.Gauge, error)
 		GetMetrics() (map[string]string, error)
 	}
 )

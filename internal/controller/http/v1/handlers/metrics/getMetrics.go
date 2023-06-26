@@ -3,8 +3,8 @@ package metrics
 import (
 	"encoding/json"
 	"fmt"
+	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
-	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
@@ -35,15 +35,15 @@ func (h *hadlerReciever) getMetricByName(w http.ResponseWriter, r *http.Request)
 	metricName := chi.URLParam(r, _metricName)
 	result := ""
 	var errRepo error
-	switch metrics.MetricType(metricType) {
-	case metrics.GaugeName:
+	switch metrics2.MetricType(metricType) {
+	case metrics2.GaugeName:
 		gauge, err := h.uc.GetGauge(metricName)
 		errRepo = err
 		if err != nil {
 			break
 		}
 		result = strconv.FormatFloat(gauge.GetValue(), 'g', -1, 64)
-	case metrics.CounterName:
+	case metrics2.CounterName:
 		counter, err := h.uc.GetCounter(metricName)
 		errRepo = err
 		if err != nil {
@@ -63,7 +63,7 @@ func (h *hadlerReciever) getMetricByName(w http.ResponseWriter, r *http.Request)
 
 // getMetricByNameJSON принимает запрос ввида /value с body{"ID":"name", "Mtype":"counter|gauge"}
 func (h *hadlerReciever) getMetricByNameJSON(w http.ResponseWriter, r *http.Request) {
-	m := &metrics.Metrics{}
+	m := &metrics2.Metrics{}
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -77,8 +77,8 @@ func (h *hadlerReciever) getMetricByNameJSON(w http.ResponseWriter, r *http.Requ
 	}
 
 	var errRepo error
-	switch metrics.MetricType(m.MType) {
-	case metrics.GaugeName:
+	switch metrics2.MetricType(m.MType) {
+	case metrics2.GaugeName:
 		gauge, err := h.uc.GetGauge(m.ID)
 		errRepo = err
 		if err != nil {
@@ -86,7 +86,7 @@ func (h *hadlerReciever) getMetricByNameJSON(w http.ResponseWriter, r *http.Requ
 		}
 		m.Value = new(float64)
 		m.SetGauge(gauge)
-	case metrics.CounterName:
+	case metrics2.CounterName:
 		counter, err := h.uc.GetCounter(m.ID)
 		errRepo = err
 		if err != nil {

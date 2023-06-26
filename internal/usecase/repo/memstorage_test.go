@@ -1,8 +1,8 @@
 package memstorage
 
 import (
+	"github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
-	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"

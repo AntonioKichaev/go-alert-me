@@ -3,9 +3,9 @@ package senders
 import (
 	"fmt"
 	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	"github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
-	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"

@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"github.com/antoniokichaev/go-alert-me/pkg/metrics"
+	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 )
 
 type UpdaterUseCase struct {
@@ -12,8 +12,8 @@ func NewUpdater(repo UpdaterRepo) *UpdaterUseCase {
 	return &UpdaterUseCase{repo: repo}
 }
 
-func (u *UpdaterUseCase) AddCounter(name string, value any) (*metrics.Counter, error) {
-	c, err := metrics.NewCounter(name, value)
+func (u *UpdaterUseCase) AddCounter(name string, value any) (*metrics2.Counter, error) {
+	c, err := metrics2.NewCounter(name, value)
 	if err != nil {
 		return nil, err
 	}
@@ -21,8 +21,8 @@ func (u *UpdaterUseCase) AddCounter(name string, value any) (*metrics.Counter, e
 	return c, err
 }
 
-func (u *UpdaterUseCase) SetGauge(name string, value any) (*metrics.Gauge, error) {
-	g, err := metrics.NewGauge(name, value)
+func (u *UpdaterUseCase) SetGauge(name string, value any) (*metrics2.Gauge, error) {
+	g, err := metrics2.NewGauge(name, value)
 	if err != nil {
 		return nil, err
 	}
