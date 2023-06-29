@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"errors"
 	"strconv"
 )
 
@@ -39,6 +40,12 @@ func validCounter(name string, value any) (string, int64, error) {
 		v = value
 	case int64:
 		v = int(value)
+	case *int64:
+		if value != nil {
+			v = int(*value)
+		} else {
+			err = errors.New("validGauge: nil pointer")
+		}
 
 	}
 

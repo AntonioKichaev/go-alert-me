@@ -2,7 +2,7 @@ package metrics_test
 
 import (
 	"errors"
-	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
@@ -199,7 +199,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			jsonBody:     `{"id":"my","type":"gauge"}`,
 			jsonResponse: `{"id":"my","type":"gauge", "value":5 }`,
 		},
-		"doesn't exist ": {
+		"doesn't existqwe ": {
 			method:      http.MethodPost,
 			targetURL:   "/value/",
 			statusCode:  http.StatusNotFound,

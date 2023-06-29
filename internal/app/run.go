@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 	configSrv "github.com/antoniokichaev/go-alert-me/config/server"
-	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http"
 	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	memstorage "github.com/antoniokichaev/go-alert-me/internal/usecase/repo"

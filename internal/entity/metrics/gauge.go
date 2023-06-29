@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"errors"
 	"strconv"
 )
 
@@ -34,6 +35,12 @@ func validGauge(name string, value any) (string, float64, error) {
 		v, err = strconv.ParseFloat(value, 64)
 	case float64:
 		v = value
+	case *float64:
+		if value != nil {
+			v = *value
+		} else {
+			err = errors.New("validGauge: nil pointer")
+		}
 	}
 
 	if err != nil {

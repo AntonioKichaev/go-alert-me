@@ -6,6 +6,8 @@ import (
 
 type (
 	Updater interface {
+		UpdateMetricByParams(name, metricType string, value any) (*metrics2.Metrics, error)
+		UpdateMetric(*metrics2.Metrics) (*metrics2.Metrics, error)
 		AddCounter(name string, value any) (*metrics2.Counter, error)
 		SetGauge(name string, value any) (*metrics2.Gauge, error)
 	}
@@ -17,6 +19,7 @@ type (
 
 type (
 	ReceiverMetric interface {
+		GetMetricByName(name, metricType string) (*metrics2.Metrics, error)
 		GetCounter(name string) (*metrics2.Counter, error)
 		GetGauge(name string) (*metrics2.Gauge, error)
 		GetMetrics() (map[string]string, error)

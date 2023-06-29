@@ -40,16 +40,7 @@ func (h *updaterRoutes) updateMetrics(ctx *gin.Context) {
 	metricName := ctx.Param(_metricName)
 	metricValue := ctx.Param(_metricValue)
 
-	var err error
-
-	switch metrics2.MetricType(metricType) {
-	case metrics2.GaugeName:
-		_, err = h.uc.SetGauge(metricName, metricValue)
-	case metrics2.CounterName:
-		_, err = h.uc.AddCounter(metricName, metricValue)
-	default:
-		err = ErrorUnknownMetricType
-	}
+	_, err := h.uc.UpdateMetricByParams(metricName, metricType, metricValue)
 	if err != nil {
 		if errors.Is(err, metrics2.ErrorName) {
 			ctx.AbortWithStatus(_zeroMetricName)

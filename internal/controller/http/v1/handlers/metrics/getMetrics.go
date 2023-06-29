@@ -15,7 +15,7 @@ type hadlerReciever struct {
 	uc usecase.ReceiverMetric
 }
 
-func NewReceiver(handler chi.Router, uc usecase.ReceiverMetricRepo) {
+func NewReceiver(handler chi.Router, uc usecase.ReceiverMetric) {
 	rec := newReceiver(uc)
 	//Get /
 	handler.Get("/", rec.getMetrics)
@@ -25,7 +25,7 @@ func NewReceiver(handler chi.Router, uc usecase.ReceiverMetricRepo) {
 
 }
 
-func newReceiver(uc usecase.ReceiverMetricRepo) *hadlerReciever {
+func newReceiver(uc usecase.ReceiverMetric) *hadlerReciever {
 	return &hadlerReciever{uc: uc}
 }
 
@@ -34,27 +34,17 @@ func (h *hadlerReciever) getMetricByName(w http.ResponseWriter, r *http.Request)
 	metricType := chi.URLParam(r, _metricType)
 	metricName := chi.URLParam(r, _metricName)
 	result := ""
-	var errRepo error
-	switch metricsEntity.MetricType(metricType) {
-	case metricsEntity.GaugeName:
-		gauge, err := h.uc.GetGauge(metricName)
-		errRepo = err
-		if err != nil {
-			break
-		}
-		result = strconv.FormatFloat(gauge.GetValue(), 'g', -1, 64)
-	case metricsEntity.CounterName:
-		counter, err := h.uc.GetCounter(metricName)
-		errRepo = err
-		if err != nil {
-			break
-		}
-		result = strconv.FormatInt(counter.GetValue(), 10)
-	}
-	if errRepo != nil || result == "" {
+	metric, err := h.uc.GetMetricByName(metricName, metricType)
+	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+	if metric.Delta != nil {
+		result = strconv.FormatInt(*metric.Delta, 10)
+	} else {
+		result = strconv.FormatFloat(*metric.Value, 'g', -1, 64)
+	}
+
 	w.Header().Set("Content-Type", _contentTypeText)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(result))
@@ -76,26 +66,8 @@ func (h *hadlerReciever) getMetricByNameJSON(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var errRepo error
-	switch metricsEntity.MetricType(m.MType) {
-	case metricsEntity.GaugeName:
-		gauge, err := h.uc.GetGauge(m.ID)
-		errRepo = err
-		if err != nil {
-			break
-		}
-		m.Value = new(float64)
-		m.SetGauge(gauge)
-	case metricsEntity.CounterName:
-		counter, err := h.uc.GetCounter(m.ID)
-		errRepo = err
-		if err != nil {
-			break
-		}
-		m.Delta = new(int64)
-		m.SetCounter(counter)
-	}
-	if errRepo != nil {
+	m, err = h.uc.GetMetricByName(m.ID, m.MType)
+	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}

@@ -38,23 +38,10 @@ func (h *updaterRoutes) updateMetrics(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, _metricType)
 	metricName := chi.URLParam(r, _metricName)
 	metricValue := chi.URLParam(r, _metricValue)
-	m, err := metricsEntity.NewMetrics(metricType, metricName, metricValue)
-	if err == nil {
-		switch metricsEntity.MetricType(m.MType) {
-		case metricsEntity.GaugeName:
-			g, err := h.uc.SetGauge(m.ID, *m.Value)
-			if err == nil {
-				m.SetGauge(g)
-			}
-		case metricsEntity.CounterName:
-			c, err := h.uc.AddCounter(m.ID, *m.Delta)
-			if err == nil {
-				m.SetCounter(c)
-			}
-		default:
-			err = metricsEntity.ErrorUnknownMetricType
-		}
-	}
+	m, err := metricsEntity.NewMetrics(
+		metricsEntity.SetMetricType(metricType),
+		metricsEntity.SetName(metricName),
+		metricsEntity.SetValueOrDelta(metricValue))
 
 	if err != nil {
 		if errors.Is(err, metricsEntity.ErrorName) {
@@ -68,7 +55,11 @@ func (h *updaterRoutes) updateMetrics(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
+	_, err = h.uc.UpdateMetricByParams(m.ID, m.MType, m.GetTmpValue())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -105,21 +96,11 @@ func (h *updaterRoutes) updateMetricsJSON(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	switch metricsEntity.MetricType(m.MType) {
-	case metricsEntity.GaugeName:
-		g, err := h.uc.SetGauge(m.ID, *m.Value)
-		if err != nil {
-			return
-		}
-		m.SetGauge(g)
-	case metricsEntity.CounterName:
-		c, err := h.uc.AddCounter(m.ID, *m.Delta)
-		if err != nil {
-			return
-		}
-		m.SetCounter(c)
+	m, err = h.uc.UpdateMetric(m)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-
 	result, err := json.Marshal(m)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

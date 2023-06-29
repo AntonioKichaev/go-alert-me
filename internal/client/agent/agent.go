@@ -128,7 +128,10 @@ func (agent *agentBond) makeFormatToSend() [][]byte {
 		if len(s) < 2 {
 			continue
 		}
-		t, err := metrics.NewMetrics(s[0], s[1], val)
+		t, err := metrics.NewMetrics(
+			metrics.SetMetricType(s[0]),
+			metrics.SetName(s[1]),
+			metrics.SetValueOrDelta(val))
 		if err != nil {
 			continue
 		}

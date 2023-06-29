@@ -6,10 +6,11 @@ import (
 )
 
 type Metrics struct {
-	ID    string   `json:"id"`              // имя метрики
-	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	ID       string   `json:"id"`              // имя метрики
+	MType    string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta    *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value    *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	tmpValue any      // значение метрики до момента проставления
 }
 
 func (m *Metrics) String() string {
@@ -25,17 +26,20 @@ func (m *Metrics) String() string {
 	return s.String()
 }
 
-func NewMetrics(mType, mName, mValue string) (*Metrics, error) {
-	m := &Metrics{ID: mName, MType: mType, Delta: new(int64), Value: new(float64)}
-	switch MetricType(mType) {
+func NewMetrics(opts ...Option) (*Metrics, error) {
+	m := &Metrics{Delta: new(int64), Value: new(float64)}
+	for _, opt := range opts {
+		opt(m)
+	}
+	switch MetricType(m.MType) {
 	case GaugeName:
-		g, err := NewGauge(mName, mValue)
+		g, err := NewGauge(m.ID, m.tmpValue)
 		if err != nil {
 			return nil, err
 		}
 		*m.Value = g.GetValue()
 	case CounterName:
-		c, err := NewCounter(mName, mValue)
+		c, err := NewCounter(m.ID, m.tmpValue)
 		if err != nil {
 			return nil, err
 		}
@@ -47,17 +51,15 @@ func NewMetrics(mType, mName, mValue string) (*Metrics, error) {
 	return m, nil
 }
 
-func (m *Metrics) SetGauge(gauge *Gauge) {
-	m.ID = gauge.GetName()
+func (m *Metrics) SetValue(value float64) {
 	m.MType = GaugeName.String()
 	m.Delta = nil
-	*m.Value = gauge.GetValue()
+	*m.Value = value
 }
-func (m *Metrics) SetCounter(counter *Counter) {
-	m.ID = counter.GetName()
+func (m *Metrics) SetDelta(delta int64) {
 	m.MType = CounterName.String()
 	m.Value = nil
-	*m.Delta = counter.GetValue()
+	*m.Delta = delta
 }
 
 func (m *Metrics) IsValid() error {
@@ -76,4 +78,15 @@ func (m *Metrics) IsValid() error {
 	}
 	return nil
 
+}
+
+func (m *Metrics) ToGauge() (*Gauge, error) {
+	return NewGauge(m.ID, m.Value)
+}
+
+func (m *Metrics) ToCounter() (*Counter, error) {
+	return NewCounter(m.ID, m.Delta)
+}
+func (m *Metrics) GetTmpValue() any {
+	return m.tmpValue
 }
