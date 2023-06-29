@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -34,6 +35,7 @@ type agentBond struct {
 	grabber        grabbers.Grabber
 	notify         <-chan struct{}
 	zipper         mgzip.Zipper
+	mu             sync.RWMutex
 }
 
 func NewAgentMetric(opts ...Option) Agent {
@@ -80,6 +82,8 @@ func (agent *agentBond) sendReport() {
 }
 
 func (agent *agentBond) resetState() {
+	agent.mu.Lock()
+	defer agent.mu.Unlock()
 	agent.metricsState = make(map[string]string, agent.metricsNumbers)
 }
 func (agent *agentBond) updateState() {
@@ -92,7 +96,9 @@ func (agent *agentBond) updateState() {
 					logger.Log.Info("val: cant convert to integer", zap.String("val", val), zap.Error(err))
 					continue
 				}
+				agent.mu.RLock()
 				oldV, ok := agent.metricsState[key]
+				agent.mu.RUnlock()
 				var oldVal int
 				if ok {
 					oldVal, err = strconv.Atoi(oldV)
@@ -103,17 +109,20 @@ func (agent *agentBond) updateState() {
 				}
 				val = strconv.Itoa(nVal + oldVal)
 			}
+			agent.mu.Lock()
 			agent.metricsState[key] = val
+			agent.mu.Unlock()
 		}
 	}
 }
 
 func (agent *agentBond) makeFormatToSend() [][]byte {
+	agent.mu.RLock()
+	defer agent.mu.RUnlock()
 	if len(agent.metricsState) == 0 {
 		return nil
 	}
 	res := make([][]byte, 0, len(agent.metricsState))
-
 	for key, val := range agent.metricsState {
 		s := strings.Split(key, "/")
 		if len(s) < 2 {
