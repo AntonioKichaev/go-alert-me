@@ -107,8 +107,6 @@ func (h *hadlerReciever) getMetricByNameJSON(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", _contentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(result)
-	fmt.Println("cinten result ok", "content", _contentTypeJSON)
-
 }
 
 func (h *hadlerReciever) getMetrics(w http.ResponseWriter, r *http.Request) {

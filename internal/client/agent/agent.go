@@ -59,50 +59,59 @@ func NewAgentMetric(opts ...Option) Agent {
 }
 
 func (agent *agentBond) Run() {
-	reportTicker := time.NewTicker(agent.reportInterval)
-	pollTicker := time.NewTicker(agent.pollInterval)
-	for {
-		select {
-		case <-reportTicker.C:
-			data := agent.makeFormatToSend()
-			if len(data) > 0 {
-				err := agent.delivery.DeliveryBody(data)
-				if err != nil {
-					logger.Log.Error("agent.Run() delivery err:=", zap.Error(err))
-				}
+	go agent.sendReport()
+	go agent.updateState()
+	<-agent.notify // ждем сигнала на завершения
+
+}
+
+func (agent *agentBond) sendReport() {
+	for ; ; time.Sleep(agent.reportInterval) {
+		data := agent.makeFormatToSend()
+		if len(data) > 0 {
+			err := agent.delivery.DeliveryBody(data)
+			if err != nil {
+				logger.Log.Error("agent.Run() delivery err:=", zap.Error(err))
 			}
-			agent.resetState()
-		case <-pollTicker.C:
-			snap := agent.grabber.GetSnapshot()
-			agent.updateState(snap)
-		case <-agent.notify:
-			return
-		default:
-			time.Sleep(time.Second / 2)
 		}
+		agent.resetState()
 	}
+
 }
 
 func (agent *agentBond) resetState() {
 	agent.metricsState = make(map[string]string, agent.metricsNumbers)
 }
-func (agent *agentBond) updateState(state map[string]string) {
-	for key, val := range state {
-		if strings.Contains(key, "counter") {
-			nVal, _ := strconv.Atoi(val)
-			oldVal, _ := strconv.Atoi(agent.metricsState[key])
-			val = strconv.Itoa(nVal + oldVal)
+func (agent *agentBond) updateState() {
+	for ; ; time.Sleep(agent.pollInterval) {
+		state := agent.grabber.GetSnapshot()
+		for key, val := range state {
+			if strings.Contains(key, "counter") {
+				nVal, err := strconv.Atoi(val)
+				if err != nil {
+					logger.Log.Info("val: cant convert to integer", zap.String("val", val), zap.Error(err))
+					continue
+				}
+				oldV, ok := agent.metricsState[key]
+				var oldVal int
+				if ok {
+					oldVal, err = strconv.Atoi(oldV)
+					if err != nil {
+						logger.Log.Info("agent.MetricsState: cant convert to integer", zap.String("oldV", oldV), zap.Error(err))
+						continue
+					}
+				}
+				val = strconv.Itoa(nVal + oldVal)
+			}
+			agent.metricsState[key] = val
 		}
-		agent.metricsState[key] = val
 	}
 }
 
 func (agent *agentBond) makeFormatToSend() [][]byte {
-	// 1 way
-	// передавать строки ввида json {}
-	// надо будет чтоб агент превращал state ->json
-	//
-	//
+	if len(agent.metricsState) == 0 {
+		return nil
+	}
 	res := make([][]byte, 0, len(agent.metricsState))
 
 	for key, val := range agent.metricsState {

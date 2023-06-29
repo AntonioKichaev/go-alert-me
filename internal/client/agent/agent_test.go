@@ -2,17 +2,17 @@ package agent
 
 import (
 	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers"
-	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers/mocks"
+	grabber_mocks "github.com/antoniokichaev/go-alert-me/internal/client/grabbers/mocks"
 	"github.com/antoniokichaev/go-alert-me/internal/client/senders"
-	smocks "github.com/antoniokichaev/go-alert-me/internal/client/senders/mocks"
+	sender_mocks "github.com/antoniokichaev/go-alert-me/internal/client/senders/mocks"
 	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
 )
 
 func Test_agentBond_Run(t *testing.T) {
-	mockDelivery := smocks.NewDeliveryMan(t)
-	mockGrabber := mocks.NewGrabber(t)
+	mockDelivery := sender_mocks.NewDeliveryMan(t)
+	mockGrabber := grabber_mocks.NewGrabber(t)
 
 	type fields struct {
 		pollInterval   time.Duration

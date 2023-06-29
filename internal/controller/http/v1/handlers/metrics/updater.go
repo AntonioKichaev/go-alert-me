@@ -12,17 +12,12 @@ import (
 )
 
 const (
-	//При попытке передать запрос без имени метрики возвращать http.StatusNotFound.
-	_zeroMetricName = http.StatusNotFound
-	//При попытке передать запрос с некорректным типом метрики или значением возвращать http.StatusBadRequest.
-	_incorrectMetricType  = http.StatusBadRequest
-	_incorrectMetricValue = http.StatusNotFound
-	_contentTypeText      = "text/plain; charset=utf-8"
-	_contentTypeJSON      = "application/json"
-	_contentTypeHTML      = "text/html"
-	_metricType           = "MetricType"
-	_metricName           = "MetricName"
-	_metricValue          = "MetricValue"
+	_contentTypeText = "text/plain; charset=utf-8"
+	_contentTypeJSON = "application/json"
+	_contentTypeHTML = "text/html"
+	_metricType      = "MetricType"
+	_metricName      = "MetricName"
+	_metricValue     = "MetricValue"
 )
 
 type updaterRoutes struct {
@@ -63,11 +58,11 @@ func (h *updaterRoutes) updateMetrics(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if errors.Is(err, metricsEntity.ErrorName) {
-			w.WriteHeader(_zeroMetricName)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		if errors.Is(err, metricsEntity.ErrorUnknownMetricType) {
-			w.WriteHeader(_incorrectMetricType)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		w.WriteHeader(http.StatusBadRequest)
@@ -96,15 +91,15 @@ func (h *updaterRoutes) updateMetricsJSON(w http.ResponseWriter, r *http.Request
 	err = m.IsValid()
 	if err != nil {
 		if errors.Is(err, metricsEntity.ErrorName) {
-			w.WriteHeader(_zeroMetricName)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		if errors.Is(err, metricsEntity.ErrorUnknownMetricType) {
-			w.WriteHeader(_incorrectMetricType)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if errors.Is(err, metricsEntity.ErrorBadValue) {
-			w.WriteHeader(_incorrectMetricValue)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		w.WriteHeader(http.StatusBadRequest)

@@ -18,46 +18,39 @@ func Run() {
 
 	serverConfig := configSrv.NewServerConfig()
 	configSrv.ParseFlag(serverConfig)
-	mu := chi.NewRouter()
-	err := logger.Initialize("INFO")
+	logger.Initialize("INFO")
 	logger.Log.Info("config server", zap.Object("config", serverConfig))
+
+	storeCounter, err := memorystorage.NewMemoryStorage(
+		memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
+		memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath),
+		memorystorage.WithRestore(serverConfig.Restore),
+	)
 	if err != nil {
-		panic(err)
+		logger.Log.Fatal("init storeCounter: ", zap.Error(err))
+	}
+	storeGauge, err := memorystorage.NewMemoryStorage(
+		memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
+		memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath+".gauge"),
+		memorystorage.WithRestore(serverConfig.Restore),
+	)
+	if err != nil {
+		logger.Log.Fatal("init storeGauge: ", zap.Error(err))
 	}
 
-	mu.Use(logger.LogMiddleware)
-	mu.Use(mgzip.GzipMiddleware)
+	router := chi.NewRouter()
+	router.Use(logger.LogMiddleware)
+	router.Use(mgzip.GzipMiddleware)
 
-	storeCounter, storeGauge, err := getStoresCounterGauge(serverConfig)
-	if err != nil {
-		panic(err)
-	}
 	storeKeeper := memstorage.NewMemStorage(storeCounter, storeGauge)
 	{
 		updaterUc := usecase.NewUpdater(storeKeeper)
 		getterUc := usecase.NewReceiver(storeKeeper)
-		v1.NewRouter(mu, updaterUc, getterUc)
+		v1.NewRouter(router, updaterUc, getterUc)
 	}
 
-	err = http.ListenAndServe(serverConfig.GetMyAddress(), mu)
+	err = http.ListenAndServe(serverConfig.GetMyAddress(), router)
 	if err != nil {
 		logger.Log.Fatal("main: ", zap.String("err", fmt.Sprintf("%v", err)))
 	}
-}
-
-func getStoresCounterGauge(config *configSrv.Server) (*memorystorage.MemoryStorage, *memorystorage.MemoryStorage, error) {
-	storeCounter, err := memorystorage.NewMemoryStorage(
-		memorystorage.SetStoreIntervalSecond(config.StoreIntervalSecond),
-		memorystorage.SetPathToSaveLoad(config.FileStoragePath),
-		memorystorage.WithRestore(config.Restore),
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	storeGauge, err := memorystorage.NewMemoryStorage(
-		memorystorage.SetStoreIntervalSecond(config.StoreIntervalSecond),
-		memorystorage.SetPathToSaveLoad(config.FileStoragePath),
-		memorystorage.WithRestore(config.Restore),
-	)
-	return storeCounter, storeGauge, err
 }

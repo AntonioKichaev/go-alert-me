@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/antoniokichaev/go-alert-me/config/agent"
 	"github.com/antoniokichaev/go-alert-me/internal/client"
 	"github.com/antoniokichaev/go-alert-me/internal/client/agent"
@@ -17,10 +16,7 @@ const _endPointUpdateValue = "/update/"
 func main() {
 	agentConfig := config.NewAgentConfig()
 	config.ParseFlag(agentConfig)
-	err := logger.Initialize(agentConfig.LoggingLevel)
-	if err != nil {
-		panic(fmt.Errorf("logger init:%v", err))
-	}
+	logger.Initialize(agentConfig.LoggingLevel)
 	pollInterval := agentConfig.GetPollIntervalSecond()
 	reportInterval := agentConfig.GetReportIntervalSecond()
 	logger.Log.Info("config agent", zap.Object("agent", agentConfig))

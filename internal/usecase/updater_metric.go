@@ -17,8 +17,7 @@ func (u *UpdaterUseCase) AddCounter(name string, value any) (*metrics2.Counter, 
 	if err != nil {
 		return nil, err
 	}
-	c, err = u.repo.AddCounter(c)
-	return c, err
+	return u.repo.AddCounter(c)
 }
 
 func (u *UpdaterUseCase) SetGauge(name string, value any) (*metrics2.Gauge, error) {
