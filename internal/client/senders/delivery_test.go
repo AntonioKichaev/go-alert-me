@@ -2,7 +2,7 @@ package senders
 
 import (
 	"fmt"
-	v1 "github.com/antoniokichaev/go-alert-me/internal/controller/http"
+	"github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
 	"github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"

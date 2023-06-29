@@ -1,4 +1,4 @@
-package http
+package v1
 
 import (
 	"github.com/antoniokichaev/go-alert-me/internal/controller/http/v1/handlers/metrics"
