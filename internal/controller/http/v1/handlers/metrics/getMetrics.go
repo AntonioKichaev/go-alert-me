@@ -11,28 +11,19 @@ import (
 	"strconv"
 )
 
-type hadlerReciever struct {
+type HadlerReciever struct {
 	uc usecase.ReceiverMetric
 }
 
-func NewReceiver(handler chi.Router, uc usecase.ReceiverMetric) {
-	rec := newReceiver(uc)
-	//Get /
-	handler.Get("/", rec.getMetrics)
-	//Get /value/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>
-	handler.Get(fmt.Sprintf("/value/{%s}/{%s}", _metricType, _metricName), rec.getMetricByName)
-	handler.Post("/value/", rec.getMetricByNameJSON)
+func NewReceiver(uc usecase.ReceiverMetric) *HadlerReciever {
+	return &HadlerReciever{uc: uc}
 
 }
 
-func newReceiver(uc usecase.ReceiverMetric) *hadlerReciever {
-	return &hadlerReciever{uc: uc}
-}
-
-// getMetricByName принимает запрос ввида /value/{counter|gauge}/someMetric
-func (h *hadlerReciever) getMetricByName(w http.ResponseWriter, r *http.Request) {
-	metricType := chi.URLParam(r, _metricType)
-	metricName := chi.URLParam(r, _metricName)
+// GetMetricByName принимает запрос ввида /value/{counter|gauge}/someMetric
+func (h *HadlerReciever) GetMetricByName(w http.ResponseWriter, r *http.Request) {
+	metricType := chi.URLParam(r, MetricType)
+	metricName := chi.URLParam(r, MetricName)
 	result := ""
 	metric, err := h.uc.GetMetricByName(metricName, metricType)
 	if err != nil {
@@ -51,8 +42,8 @@ func (h *hadlerReciever) getMetricByName(w http.ResponseWriter, r *http.Request)
 
 }
 
-// getMetricByNameJSON принимает запрос ввида /value с body{"ID":"name", "Mtype":"counter|gauge"}
-func (h *hadlerReciever) getMetricByNameJSON(w http.ResponseWriter, r *http.Request) {
+// GetMetricByNameJSON принимает запрос ввида /value с body{"ID":"name", "Mtype":"counter|gauge"}
+func (h *HadlerReciever) GetMetricByNameJSON(w http.ResponseWriter, r *http.Request) {
 	m := &metricsEntity.Metrics{}
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
@@ -81,7 +72,7 @@ func (h *hadlerReciever) getMetricByNameJSON(w http.ResponseWriter, r *http.Requ
 	_, _ = w.Write(result)
 }
 
-func (h *hadlerReciever) getMetrics(w http.ResponseWriter, r *http.Request) {
+func (h *HadlerReciever) GetMetrics(w http.ResponseWriter, r *http.Request) {
 	metrics, err := h.uc.GetMetrics()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

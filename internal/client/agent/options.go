@@ -5,11 +5,17 @@ import (
 	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers"
 	"github.com/antoniokichaev/go-alert-me/internal/client/senders"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
+	"go.uber.org/zap"
 	"time"
 )
 
 type Option func(agent *agentBond)
 
+func WithLogger(logger *zap.Logger) Option {
+	return func(agent *agentBond) {
+		agent.logger = logger
+	}
+}
 func SetNotifyChan(ch chan struct{}) Option {
 	return func(agent *agentBond) {
 		agent.notify = ch

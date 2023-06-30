@@ -2,7 +2,6 @@ package v1gin
 
 import (
 	"errors"
-	"fmt"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/gin-gonic/gin"
@@ -21,21 +20,17 @@ const (
 	_metricValue                 = "MetricValue"
 )
 
-type updaterRoutes struct {
+type UpdaterRoutes struct {
 	uc usecase.Updater
 }
 
-func NewUpdaterRoutes(handler gin.IRouter, uc usecase.Updater) {
-	ur := newUpdaterRoutes(uc)
+func NewUpdaterRoutes(uc usecase.Updater) *UpdaterRoutes {
+	return &UpdaterRoutes{uc: uc}
 
-	handler.POST(fmt.Sprintf("/update/:%s/:%s/:%s", _metricType, _metricName, _metricValue), ur.updateMetrics)
-}
-func newUpdaterRoutes(uc usecase.Updater) *updaterRoutes {
-	return &updaterRoutes{uc: uc}
 }
 
 // updateMetrics принимает запрос ввида /update/{counter|gauge}/someMetric/527
-func (h *updaterRoutes) updateMetrics(ctx *gin.Context) {
+func (h *UpdaterRoutes) updateMetrics(ctx *gin.Context) {
 	metricType := ctx.Param(_metricType)
 	metricName := ctx.Param(_metricName)
 	metricValue := ctx.Param(_metricValue)

@@ -6,7 +6,6 @@ import (
 	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers"
 	"github.com/antoniokichaev/go-alert-me/internal/client/senders"
 	"github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
-	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"go.uber.org/zap"
 	"net/http"
@@ -36,6 +35,7 @@ type agentBond struct {
 	notify         <-chan struct{}
 	zipper         mgzip.Zipper
 	mu             sync.RWMutex
+	logger         *zap.Logger
 }
 
 func NewAgentMetric(opts ...Option) Agent {
@@ -73,7 +73,7 @@ func (agent *agentBond) sendReport() {
 		if len(data) > 0 {
 			err := agent.delivery.DeliveryBody(data)
 			if err != nil {
-				logger.Log.Error("agent.Run() delivery err:=", zap.Error(err))
+				agent.logger.Error("agent.Run() delivery err:=", zap.Error(err))
 			}
 		}
 		agent.resetState()
@@ -93,7 +93,7 @@ func (agent *agentBond) updateState() {
 			if strings.Contains(key, "counter") {
 				nVal, err := strconv.Atoi(val)
 				if err != nil {
-					logger.Log.Info("val: cant convert to integer", zap.String("val", val), zap.Error(err))
+					agent.logger.Info("val: cant convert to integer", zap.String("val", val), zap.Error(err))
 					continue
 				}
 				agent.mu.RLock()
@@ -103,7 +103,7 @@ func (agent *agentBond) updateState() {
 				if ok {
 					oldVal, err = strconv.Atoi(oldV)
 					if err != nil {
-						logger.Log.Info("agent.MetricsState: cant convert to integer", zap.String("oldV", oldV), zap.Error(err))
+						agent.logger.Info("agent.MetricsState: cant convert to integer", zap.String("oldV", oldV), zap.Error(err))
 						continue
 					}
 				}

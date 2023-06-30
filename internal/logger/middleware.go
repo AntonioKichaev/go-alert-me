@@ -7,6 +7,7 @@ import (
 )
 
 func LogMiddleware(next http.Handler) http.Handler {
+	l := GetLogger()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		lw := loggingResponseWriter{
@@ -16,7 +17,7 @@ func LogMiddleware(next http.Handler) http.Handler {
 		t := time.Now()
 		next.ServeHTTP(&lw, r)
 		c := time.Since(t).String()
-		Log.Info("HTTP request",
+		l.Info("HTTP request",
 			zap.String("path", r.RequestURI),
 			zap.String("method", r.Method),
 			zap.Int("status", lw.Rd.Status),

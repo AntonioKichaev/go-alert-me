@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
@@ -23,6 +22,7 @@ type lineMan struct {
 	httpclient *resty.Client
 	methodSend string
 	zipper     mgzip.Zipper
+	logger     *zap.Logger
 }
 
 var ErrorStatusCode = errors.New("delivery status code")
@@ -61,7 +61,7 @@ func (lm *lineMan) DeliveryBody(mData [][]byte) error {
 		if lm.zipper != nil {
 			v, err := lm.zipper.Compress(data)
 			if err != nil {
-				logger.Log.Error("can't compress", zap.Error(err))
+				lm.logger.Error("can't compress", zap.Error(err))
 				continue
 			}
 			request.SetHeader("Content-Encoding", lm.zipper.GetEncoding())
@@ -74,7 +74,7 @@ func (lm *lineMan) DeliveryBody(mData [][]byte) error {
 		}
 		if response.StatusCode() != http.StatusOK {
 			err = fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
-			logger.Log.Error("DeliveryBody() statusCode: ", zap.Error(err))
+			lm.logger.Error("DeliveryBody() statusCode: ", zap.Error(err))
 			return err
 		}
 

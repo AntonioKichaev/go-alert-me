@@ -1,5 +1,7 @@
 package memorystorage
 
+import "go.uber.org/zap"
+
 type Option func(storage *MemoryStorage)
 
 func SetPathToSaveLoad(path string) Option {
@@ -16,6 +18,11 @@ func WithRestore(b bool) Option {
 			}
 		}
 
+	}
+}
+func WithLogger(logger *zap.Logger) Option {
+	return func(storage *MemoryStorage) {
+		storage.logger = logger
 	}
 }
 

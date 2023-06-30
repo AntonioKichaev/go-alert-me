@@ -2,9 +2,9 @@ package logger
 
 import "go.uber.org/zap"
 
-var Log *zap.Logger = zap.NewNop()
+var log *zap.Logger = nil
 
-func Initialize(level string) {
+func Initialize(level string) *zap.Logger {
 
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
@@ -16,6 +16,9 @@ func Initialize(level string) {
 	if err != nil {
 		panic(err)
 	}
-	Log = zl
-
+	log = zl
+	return zl
+}
+func GetLogger() *zap.Logger {
+	return log
 }

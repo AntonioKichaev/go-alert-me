@@ -2,7 +2,6 @@ package memorystorage
 
 import (
 	"encoding/json"
-	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"go.uber.org/zap"
 	"io"
 	"os"
@@ -20,6 +19,7 @@ type MemoryStorage struct {
 	storeIntervalSecond int
 	pathToSaveLoad      string
 	mu                  sync.RWMutex
+	logger              *zap.Logger
 }
 
 func NewMemoryStorage(opts ...Option) (*MemoryStorage, error) {
@@ -97,7 +97,7 @@ func (m *MemoryStorage) saveOnDisk() {
 		el := &saveFormat{Key: key, Value: val}
 		err := enc.Encode(el)
 		if err != nil {
-			logger.Log.Error("encoding", zap.Error(err))
+			m.logger.Error("encoding", zap.Error(err))
 			continue
 		}
 	}

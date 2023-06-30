@@ -1,14 +1,27 @@
 package v1
 
 import (
+	"fmt"
 	"github.com/antoniokichaev/go-alert-me/internal/controller/http/v1/handlers/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/go-chi/chi/v5"
 )
 
 func NewRouter(handler *chi.Mux, updater usecase.Updater, receiver usecase.ReceiverMetric) {
-	h := handler.Route("/", func(r chi.Router) {
+	up := metrics.NewUpdaterRoutes(updater)
+	handler.Route("/update", func(r chi.Router) {
+		r.Post(fmt.Sprintf("/{%s}/{%s}/{%s}", metrics.MetricType, metrics.MetricName, metrics.MetricValue), up.UpdateMetrics)
+		r.Post("/", up.UpdateMetricsJSON)
 	})
-	metrics.NewUpdaterRoutes(h, updater)
-	metrics.NewReceiver(h, receiver)
+
+	rec := metrics.NewReceiver(receiver)
+
+	handler.Get("/", rec.GetMetrics)
+	handler.Route("/value", func(r chi.Router) {
+		r.Post("/", rec.GetMetricByNameJSON)
+		//Get /value/<ТИП_МЕТРИКИ>/<ИМЯ_МЕТРИКИ>
+		r.Get(fmt.Sprintf("/{%s}/{%s}", metrics.MetricType, metrics.MetricName), rec.GetMetricByName)
+
+	})
+
 }

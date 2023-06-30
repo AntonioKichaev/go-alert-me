@@ -3,7 +3,6 @@ package metrics
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	metricsEntity "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/go-chi/chi/v5"
@@ -15,29 +14,24 @@ const (
 	_contentTypeText = "text/plain; charset=utf-8"
 	_contentTypeJSON = "application/json"
 	_contentTypeHTML = "text/html"
-	_metricType      = "MetricType"
-	_metricName      = "MetricName"
-	_metricValue     = "MetricValue"
+	MetricType       = "MetricType"
+	MetricName       = "MetricName"
+	MetricValue      = "MetricValue"
 )
 
-type updaterRoutes struct {
+type UpdaterRoutes struct {
 	uc usecase.Updater
 }
 
-func NewUpdaterRoutes(handler chi.Router, uc usecase.Updater) {
-	ur := newUpdaterRoutes(uc)
-	handler.Post(fmt.Sprintf("/update/{%s}/{%s}/{%s}", _metricType, _metricName, _metricValue), ur.updateMetrics)
-	handler.Post("/update/", ur.updateMetricsJSON)
-}
-func newUpdaterRoutes(uc usecase.Updater) *updaterRoutes {
-	return &updaterRoutes{uc: uc}
+func NewUpdaterRoutes(uc usecase.Updater) *UpdaterRoutes {
+	return &UpdaterRoutes{uc: uc}
 }
 
-// updateMetrics принимает запрос ввида /update/{counter|gauge}/someMetric/527
-func (h *updaterRoutes) updateMetrics(w http.ResponseWriter, r *http.Request) {
-	metricType := chi.URLParam(r, _metricType)
-	metricName := chi.URLParam(r, _metricName)
-	metricValue := chi.URLParam(r, _metricValue)
+// UpdateMetrics принимает запрос ввида /update/{counter|gauge}/someMetric/527
+func (h *UpdaterRoutes) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
+	metricType := chi.URLParam(r, MetricType)
+	metricName := chi.URLParam(r, MetricName)
+	metricValue := chi.URLParam(r, MetricValue)
 	m, err := metricsEntity.NewMetrics(
 		metricsEntity.SetMetricType(metricType),
 		metricsEntity.SetName(metricName),
@@ -65,8 +59,8 @@ func (h *updaterRoutes) updateMetrics(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// updateMetricsJSON принимает запрос ввида /update и body metrics struct
-func (h *updaterRoutes) updateMetricsJSON(w http.ResponseWriter, r *http.Request) {
+// UpdateMetricsJSON принимает запрос ввида /update и body metrics struct
+func (h *UpdaterRoutes) UpdateMetricsJSON(w http.ResponseWriter, r *http.Request) {
 	m := &metricsEntity.Metrics{}
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()

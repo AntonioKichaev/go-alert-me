@@ -16,16 +16,17 @@ const _endPointUpdateValue = "/update/"
 func main() {
 	agentConfig := config.NewAgentConfig()
 	config.ParseFlag(agentConfig)
-	logger.Initialize(agentConfig.LoggingLevel)
+	l := logger.Initialize(agentConfig.LoggingLevel)
 	pollInterval := agentConfig.GetPollIntervalSecond()
 	reportInterval := agentConfig.GetReportIntervalSecond()
-	logger.Log.Info("config agent", zap.Object("agent", agentConfig))
+	l.Info("config agent", zap.Object("agent", agentConfig))
 	deliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
 	zipper := mgzip.NewGZipper()
 	if err != nil {
 		panic(err)
 	}
 	ag := agent.NewAgentMetric(
+		agent.WithLogger(l),
 		agent.SetName("anton"),
 		agent.SetZipper(zipper),
 		agent.InitDeliveryAddress(deliveryAddress, http.MethodPost),

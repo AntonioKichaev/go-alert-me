@@ -18,24 +18,26 @@ func Run() {
 
 	serverConfig := configSrv.NewServerConfig()
 	configSrv.ParseFlag(serverConfig)
-	logger.Initialize("INFO")
-	logger.Log.Info("config server", zap.Object("config", serverConfig))
+	l := logger.Initialize("INFO")
+	l.Info("config server", zap.Object("config", serverConfig))
 
 	storeCounter, err := memorystorage.NewMemoryStorage(
+		memorystorage.WithLogger(l),
 		memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
 		memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath),
 		memorystorage.WithRestore(serverConfig.Restore),
 	)
 	if err != nil {
-		logger.Log.Fatal("init storeCounter: ", zap.Error(err))
+		l.Fatal("init storeCounter: ", zap.Error(err))
 	}
 	storeGauge, err := memorystorage.NewMemoryStorage(
+		memorystorage.WithLogger(l),
 		memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
 		memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath+".gauge"),
 		memorystorage.WithRestore(serverConfig.Restore),
 	)
 	if err != nil {
-		logger.Log.Fatal("init storeGauge: ", zap.Error(err))
+		l.Fatal("init storeGauge: ", zap.Error(err))
 	}
 
 	router := chi.NewRouter()
@@ -51,6 +53,6 @@ func Run() {
 
 	err = http.ListenAndServe(serverConfig.GetMyAddress(), router)
 	if err != nil {
-		logger.Log.Fatal("main: ", zap.String("err", fmt.Sprintf("%v", err)))
+		l.Fatal("main: ", zap.String("err", fmt.Sprintf("%v", err)))
 	}
 }
