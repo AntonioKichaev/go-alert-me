@@ -13,6 +13,7 @@ func ParseFlag(ag *Agent) {
 	flag.StringVar(&ag.HTTPServerAdr, "a", "localhost:8080", "where agent wil send request")
 	flag.Int64Var(&ag.ReportIntervalSecond, "r", 10, " agent will send report to server in seconds")
 	flag.Int64Var(&ag.PollIntervalSecond, "p", 2, "agent will grab data from machine")
+	flag.StringVar(&ag.LoggingLevel, "l", "INFO", "agent log level")
 	flag.Parse()
 	err := env.Parse(ag)
 	if err != nil {

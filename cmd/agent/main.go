@@ -1,29 +1,38 @@
 package main
 
 import (
-	"fmt"
 	"github.com/antoniokichaev/go-alert-me/config/agent"
-	"github.com/antoniokichaev/go-alert-me/internal/services/client"
+	"github.com/antoniokichaev/go-alert-me/internal/client"
+	"github.com/antoniokichaev/go-alert-me/internal/client/agent"
+	"github.com/antoniokichaev/go-alert-me/internal/logger"
+	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
+	"go.uber.org/zap"
+	"net/http"
 	"net/url"
 )
 
-const _endPointUpdateValue = "/update"
+const _endPointUpdateValue = "/update/"
 
 func main() {
 	agentConfig := config.NewAgentConfig()
 	config.ParseFlag(agentConfig)
+	l := logger.Initialize(agentConfig.LoggingLevel)
 	pollInterval := agentConfig.GetPollIntervalSecond()
 	reportInterval := agentConfig.GetReportIntervalSecond()
-	fmt.Println("config agent", agentConfig)
-	diliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
+	l.Info("config agent", zap.Object("agent", agentConfig))
+	deliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
+	zipper := mgzip.NewGZipper()
 	if err != nil {
 		panic(err)
 	}
-	agent := client.NewAgentMetric(
-		client.SetName("anton"),
-		client.InitDeliveryAddress(diliveryAddress),
-		client.SetReportInterval(reportInterval),
-		client.SetPollInterval(pollInterval),
+	ag := agent.NewAgentMetric(
+		agent.WithLogger(l),
+		agent.SetName("anton"),
+		agent.SetZipper(zipper),
+		agent.InitDeliveryAddress(deliveryAddress, http.MethodPost),
+		agent.SetReportInterval(reportInterval),
+		agent.SetPollInterval(pollInterval),
+		agent.SetMetricsNumber(len(client.AllowGaugeMetric)),
 	)
-	agent.Run()
+	ag.Run()
 }
