@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	configSrv "github.com/antoniokichaev/go-alert-me/config/server"
 	"github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
@@ -9,17 +10,30 @@ import (
 	memstorage "github.com/antoniokichaev/go-alert-me/internal/usecase/repo"
 	"github.com/antoniokichaev/go-alert-me/pkg/memorystorage"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
+	"github.com/antoniokichaev/go-alert-me/pkg/postgres"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 func Run() {
 
 	serverConfig := configSrv.NewServerConfig()
-	configSrv.ParseFlag(serverConfig)
+	dbConfig := configSrv.NewDBConfig()
+	configSrv.ParseFlagServer(serverConfig, dbConfig)
+
 	l := logger.Initialize("INFO")
 	l.Info("config server", zap.Object("config", serverConfig))
+	l.Info("config db", zap.Object("config", dbConfig))
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	defer cancel()
+	db, err := postgres.New(ctx, dbConfig.DatabaseDns)
+	defer db.Close()
+	if err != nil {
+		l.Error("init db: ", zap.Error(err))
+	}
 
 	storeCounter, err := memorystorage.NewMemoryStorage(
 		memorystorage.WithLogger(l),
@@ -48,7 +62,12 @@ func Run() {
 	{
 		updaterUc := usecase.NewUpdater(storeKeeper)
 		getterUc := usecase.NewReceiver(storeKeeper)
-		v1.NewRouter(router, updaterUc, getterUc)
+		v1.NewRouter(
+			router,
+			updaterUc,
+			getterUc,
+			db,
+		)
 	}
 
 	err = http.ListenAndServe(serverConfig.GetMyAddress(), router)

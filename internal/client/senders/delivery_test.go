@@ -19,7 +19,7 @@ func getServer(mockStore *mocks.Keeper) *httptest.Server {
 	getterUc := usecase.NewReceiver(mockStore)
 	updaterUc := usecase.NewUpdater(mockStore)
 	r := chi.NewRouter()
-	v1.NewRouter(r, updaterUc, getterUc)
+	v1.NewRouter(r, updaterUc, getterUc, nil)
 	return httptest.NewServer(r)
 }
 
