@@ -3,11 +3,11 @@ package server
 import "go.uber.org/zap/zapcore"
 
 type DBConfig struct {
-	DatabaseDns string `env:"DATABASE_DSN"`
+	DatabaseDNS string `env:"DATABASE_DSN"`
 }
 
 func (db *DBConfig) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
-	encoder.AddString("DATABASE_DSN", db.DatabaseDns)
+	encoder.AddString("DATABASE_DSN", db.DatabaseDNS)
 	return nil
 }
 

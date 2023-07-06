@@ -12,7 +12,7 @@ func ParseFlagServer(srv *Server, config *DBConfig) {
 	flag.IntVar(&srv.StoreIntervalSecond, "i", 300, "timeout to save data, if 0 every operation")
 	flag.StringVar(&srv.FileStoragePath, "f", "/tmp/metrics-db.json", "if nothing without save")
 	flag.BoolVar(&srv.Restore, "r", true, "restore data from fileStoragePath")
-	flag.StringVar(&config.DatabaseDns, "d", "", "DNS address to connect database")
+	flag.StringVar(&config.DatabaseDNS, "d", "", "DNS address to connect database")
 	flag.Parse()
 	err := env.Parse(srv)
 	if err != nil {

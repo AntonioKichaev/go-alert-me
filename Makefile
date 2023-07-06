@@ -84,4 +84,4 @@ iter10: build_server build_client
             -database-dsn=$(DB_DNS) \
            -server-port=$(SERVER_PORT) \
             -source-path=.
-all: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9
+all: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 iter10
