@@ -30,7 +30,7 @@ func Run() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	db, err := postgres.New(ctx, dbConfig.DatabaseDns)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	if err != nil {
 		l.Error("init db: ", zap.Error(err))
 	}
