@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -39,6 +40,7 @@ func TestUpdateMetrics(t *testing.T) {
 		args       []any
 		returnArgs []any
 	}
+	gin.SetMode(gin.TestMode)
 	tt := map[string]struct {
 		method      string
 		targetURL   string
@@ -54,7 +56,7 @@ func TestUpdateMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName: _addCounter,
-				args:       []any{&metrics2.Counter{Name: "1", Value: 2}},
+				args:       []any{mock.Anything, &metrics2.Counter{Name: "1", Value: 2}},
 				returnArgs: []any{&metrics2.Counter{Name: "1", Value: 2}, nil},
 			},
 		},
@@ -91,7 +93,7 @@ func TestUpdateMetrics(t *testing.T) {
 			statusCode:  http.StatusOK,
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{methodName: _addCounter,
-				args:       []any{&metrics2.Counter{Name: "ram", Value: int64(-5)}},
+				args:       []any{mock.Anything, &metrics2.Counter{Name: "ram", Value: int64(-5)}},
 				returnArgs: []any{&metrics2.Counter{Name: "ram", Value: int64(-5)}, nil},
 			},
 		},
@@ -109,7 +111,7 @@ func TestUpdateMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName: _setGauge,
-				args:       []any{&metrics2.Gauge{Name: "ram", Value: 999.5999}},
+				args:       []any{mock.Anything, &metrics2.Gauge{Name: "ram", Value: 999.5999}},
 				returnArgs: []any{&metrics2.Gauge{Name: "ram", Value: 999.5999}, nil},
 			},
 		},
@@ -124,7 +126,7 @@ func TestUpdateMetrics(t *testing.T) {
 	for key, tc := range tt {
 		t.Run(key, func(t *testing.T) {
 			if len(tc.mockStore.args) != 0 {
-				mockStore.On(tc.mockStore.methodName, tc.mockStore.args...).Return(tc.mockStore.returnArgs...)
+				mockStore.On(tc.mockStore.methodName, tc.mockStore.args...).Return(tc.mockStore.returnArgs...).Once()
 			}
 
 			request := resty.New().R()
@@ -141,11 +143,3 @@ func TestUpdateMetrics(t *testing.T) {
 		})
 	}
 }
-
-//func TestHandlerMetric(t *testing.T) {
-//	mockStore := mocks.NewMetricRepository(t)
-//	handlerCounter := newUpdater(mockStore)
-//	handler := http.HandlerFunc(handlerCounter.updateMetrics)
-//	srv := httptest.NewServer(handler)
-//	defer srv.Close()
-//}
