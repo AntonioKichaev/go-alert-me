@@ -1,6 +1,7 @@
 package memstorage
 
 import (
+	"context"
 	"github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
 	"github.com/stretchr/testify/assert"
@@ -52,6 +53,7 @@ func TestMemStorage_AddCounter(t *testing.T) {
 	}
 
 	req := require.New(t)
+	ctx := context.Background()
 	for key, tc := range tt {
 		t.Run(key, func(t *testing.T) {
 			storage := mocks.NewKeeper(t)
@@ -59,20 +61,20 @@ func TestMemStorage_AddCounter(t *testing.T) {
 			for _, val := range tc.fields {
 				c, err := metrics.NewCounter(val.name, val.value)
 				assert.NoError(t, err, "create newCounter err")
-				storage.EXPECT().AddCounter(c).Return(nil, tc.wantErr)
+				storage.EXPECT().AddCounter(ctx, c).Return(nil, tc.wantErr)
 				res += c.GetValue()
-				_, _ = storage.AddCounter(c)
+				_, _ = storage.AddCounter(ctx, c)
 			}
 			metricName := ""
 			if len(tc.fields) != 0 {
 				metricName = tc.fields[0].name
 			}
-			storage.EXPECT().GetCounter(metricName).Return(&metrics.Counter{Name: metricName, Value: res}, tc.wantErr)
-			got, err := storage.GetCounter(metricName)
+			storage.EXPECT().GetCounter(ctx, metricName).Return(&metrics.Counter{Name: metricName, Value: res}, tc.wantErr)
+			got, err := storage.GetCounter(ctx, metricName)
 			req.EqualValues(tc.want, got.GetValue())
 			req.ErrorIs(tc.wantErr, err)
-			storage.EXPECT().GetMetrics().Return(tc.wantMetrics, tc.wantErr)
-			metrics, err := storage.GetMetrics()
+			storage.EXPECT().GetMetrics(ctx).Return(tc.wantMetrics, tc.wantErr)
+			metrics, err := storage.GetMetrics(ctx)
 			req.NoError(err)
 			req.EqualValues(tc.wantMetrics, metrics, "GetMetrics()")
 

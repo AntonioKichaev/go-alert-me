@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -23,7 +24,7 @@ func getServer(mockStore *mocks.Keeper) *httptest.Server {
 	getterUc := usecase.NewReceiver(mockStore)
 	updaterUc := usecase.NewUpdater(mockStore)
 	r := chi.NewRouter()
-	v1.NewRouter(r, updaterUc, getterUc, nil)
+	v1.NewRouter(r, updaterUc, getterUc, nil, nil)
 	return httptest.NewServer(r)
 }
 
@@ -55,7 +56,7 @@ func TestGetMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
-				args:        []any{"my"},
+				args:        []any{mock.Anything, "my"},
 				returnValue: []any{&metrics2.Counter{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
@@ -67,7 +68,7 @@ func TestGetMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName:  _getGauge,
-				args:        []any{"my"},
+				args:        []any{mock.Anything, "my"},
 				returnValue: []any{&metrics2.Gauge{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
@@ -80,7 +81,7 @@ func TestGetMetrics(t *testing.T) {
 			wantErr:     true,
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
-				args:        []any{"unk"},
+				args:        []any{mock.Anything, "unk"},
 				returnValue: []any{nil, errors.New("NotFound")},
 			},
 		},
@@ -133,7 +134,7 @@ func TestGetAllMetrics(t *testing.T) {
 	}
 	for key, tc := range tt {
 		t.Run(key, func(t *testing.T) {
-			mockStore.EXPECT().GetMetrics().Return(tc.returnStore, tc.wantErr)
+			mockStore.EXPECT().GetMetrics(mock.Anything).Return(tc.returnStore, tc.wantErr)
 			request := resty.New().R()
 			request.Method = http.MethodGet
 			request.URL = srv.URL
@@ -178,7 +179,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			contentType: _contentTypeJSON,
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
-				args:        []any{"my"},
+				args:        []any{mock.Anything, "my"},
 				returnValue: []any{&metrics2.Counter{Name: "my", Value: 5}, nil},
 			},
 			wantErr:      false,
@@ -192,7 +193,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			contentType: _contentTypeJSON,
 			mockStore: mockStoreRequest{
 				methodName:  _getGauge,
-				args:        []any{"my"},
+				args:        []any{mock.Anything, "my"},
 				returnValue: []any{&metrics2.Gauge{Name: "my", Value: 5}, nil},
 			},
 			wantErr:      false,
@@ -207,7 +208,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			wantErr:     true,
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
-				args:        []any{"unk"},
+				args:        []any{mock.Anything, "unk"},
 				returnValue: []any{nil, errors.New("NotFound")},
 			},
 			jsonBody:     `{"id":"unk","type":"counter"}`,

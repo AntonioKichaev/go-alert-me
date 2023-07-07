@@ -3,7 +3,10 @@
 package mocks
 
 import (
+	context "context"
+
 	metrics "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -20,25 +23,25 @@ func (_m *Keeper) EXPECT() *Keeper_Expecter {
 	return &Keeper_Expecter{mock: &_m.Mock}
 }
 
-// AddCounter provides a mock function with given fields: counter
-func (_m *Keeper) AddCounter(counter *metrics.Counter) (*metrics.Counter, error) {
-	ret := _m.Called(counter)
+// AddCounter provides a mock function with given fields: ctx, counter
+func (_m *Keeper) AddCounter(ctx context.Context, counter *metrics.Counter) (*metrics.Counter, error) {
+	ret := _m.Called(ctx, counter)
 
 	var r0 *metrics.Counter
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*metrics.Counter) (*metrics.Counter, error)); ok {
-		return rf(counter)
+	if rf, ok := ret.Get(0).(func(context.Context, *metrics.Counter) (*metrics.Counter, error)); ok {
+		return rf(ctx, counter)
 	}
-	if rf, ok := ret.Get(0).(func(*metrics.Counter) *metrics.Counter); ok {
-		r0 = rf(counter)
+	if rf, ok := ret.Get(0).(func(context.Context, *metrics.Counter) *metrics.Counter); ok {
+		r0 = rf(ctx, counter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*metrics.Counter)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(*metrics.Counter) error); ok {
-		r1 = rf(counter)
+	if rf, ok := ret.Get(1).(func(context.Context, *metrics.Counter) error); ok {
+		r1 = rf(ctx, counter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -52,14 +55,15 @@ type Keeper_AddCounter_Call struct {
 }
 
 // AddCounter is a helper method to define mock.On call
+//   - ctx context.Context
 //   - counter *metrics.Counter
-func (_e *Keeper_Expecter) AddCounter(counter interface{}) *Keeper_AddCounter_Call {
-	return &Keeper_AddCounter_Call{Call: _e.mock.On("AddCounter", counter)}
+func (_e *Keeper_Expecter) AddCounter(ctx interface{}, counter interface{}) *Keeper_AddCounter_Call {
+	return &Keeper_AddCounter_Call{Call: _e.mock.On("AddCounter", ctx, counter)}
 }
 
-func (_c *Keeper_AddCounter_Call) Run(run func(counter *metrics.Counter)) *Keeper_AddCounter_Call {
+func (_c *Keeper_AddCounter_Call) Run(run func(ctx context.Context, counter *metrics.Counter)) *Keeper_AddCounter_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*metrics.Counter))
+		run(args[0].(context.Context), args[1].(*metrics.Counter))
 	})
 	return _c
 }
@@ -69,30 +73,30 @@ func (_c *Keeper_AddCounter_Call) Return(_a0 *metrics.Counter, _a1 error) *Keepe
 	return _c
 }
 
-func (_c *Keeper_AddCounter_Call) RunAndReturn(run func(*metrics.Counter) (*metrics.Counter, error)) *Keeper_AddCounter_Call {
+func (_c *Keeper_AddCounter_Call) RunAndReturn(run func(context.Context, *metrics.Counter) (*metrics.Counter, error)) *Keeper_AddCounter_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetCounter provides a mock function with given fields: name
-func (_m *Keeper) GetCounter(name string) (*metrics.Counter, error) {
-	ret := _m.Called(name)
+// GetCounter provides a mock function with given fields: ctx, name
+func (_m *Keeper) GetCounter(ctx context.Context, name string) (*metrics.Counter, error) {
+	ret := _m.Called(ctx, name)
 
 	var r0 *metrics.Counter
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*metrics.Counter, error)); ok {
-		return rf(name)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*metrics.Counter, error)); ok {
+		return rf(ctx, name)
 	}
-	if rf, ok := ret.Get(0).(func(string) *metrics.Counter); ok {
-		r0 = rf(name)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *metrics.Counter); ok {
+		r0 = rf(ctx, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*metrics.Counter)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(name)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -106,14 +110,15 @@ type Keeper_GetCounter_Call struct {
 }
 
 // GetCounter is a helper method to define mock.On call
+//   - ctx context.Context
 //   - name string
-func (_e *Keeper_Expecter) GetCounter(name interface{}) *Keeper_GetCounter_Call {
-	return &Keeper_GetCounter_Call{Call: _e.mock.On("GetCounter", name)}
+func (_e *Keeper_Expecter) GetCounter(ctx interface{}, name interface{}) *Keeper_GetCounter_Call {
+	return &Keeper_GetCounter_Call{Call: _e.mock.On("GetCounter", ctx, name)}
 }
 
-func (_c *Keeper_GetCounter_Call) Run(run func(name string)) *Keeper_GetCounter_Call {
+func (_c *Keeper_GetCounter_Call) Run(run func(ctx context.Context, name string)) *Keeper_GetCounter_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -123,30 +128,30 @@ func (_c *Keeper_GetCounter_Call) Return(_a0 *metrics.Counter, _a1 error) *Keepe
 	return _c
 }
 
-func (_c *Keeper_GetCounter_Call) RunAndReturn(run func(string) (*metrics.Counter, error)) *Keeper_GetCounter_Call {
+func (_c *Keeper_GetCounter_Call) RunAndReturn(run func(context.Context, string) (*metrics.Counter, error)) *Keeper_GetCounter_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetGauge provides a mock function with given fields: name
-func (_m *Keeper) GetGauge(name string) (*metrics.Gauge, error) {
-	ret := _m.Called(name)
+// GetGauge provides a mock function with given fields: ctx, name
+func (_m *Keeper) GetGauge(ctx context.Context, name string) (*metrics.Gauge, error) {
+	ret := _m.Called(ctx, name)
 
 	var r0 *metrics.Gauge
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*metrics.Gauge, error)); ok {
-		return rf(name)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*metrics.Gauge, error)); ok {
+		return rf(ctx, name)
 	}
-	if rf, ok := ret.Get(0).(func(string) *metrics.Gauge); ok {
-		r0 = rf(name)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *metrics.Gauge); ok {
+		r0 = rf(ctx, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*metrics.Gauge)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(name)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -160,14 +165,15 @@ type Keeper_GetGauge_Call struct {
 }
 
 // GetGauge is a helper method to define mock.On call
+//   - ctx context.Context
 //   - name string
-func (_e *Keeper_Expecter) GetGauge(name interface{}) *Keeper_GetGauge_Call {
-	return &Keeper_GetGauge_Call{Call: _e.mock.On("GetGauge", name)}
+func (_e *Keeper_Expecter) GetGauge(ctx interface{}, name interface{}) *Keeper_GetGauge_Call {
+	return &Keeper_GetGauge_Call{Call: _e.mock.On("GetGauge", ctx, name)}
 }
 
-func (_c *Keeper_GetGauge_Call) Run(run func(name string)) *Keeper_GetGauge_Call {
+func (_c *Keeper_GetGauge_Call) Run(run func(ctx context.Context, name string)) *Keeper_GetGauge_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -177,30 +183,30 @@ func (_c *Keeper_GetGauge_Call) Return(_a0 *metrics.Gauge, _a1 error) *Keeper_Ge
 	return _c
 }
 
-func (_c *Keeper_GetGauge_Call) RunAndReturn(run func(string) (*metrics.Gauge, error)) *Keeper_GetGauge_Call {
+func (_c *Keeper_GetGauge_Call) RunAndReturn(run func(context.Context, string) (*metrics.Gauge, error)) *Keeper_GetGauge_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// GetMetrics provides a mock function with given fields:
-func (_m *Keeper) GetMetrics() (map[string]string, error) {
-	ret := _m.Called()
+// GetMetrics provides a mock function with given fields: ctx
+func (_m *Keeper) GetMetrics(ctx context.Context) (map[string]string, error) {
+	ret := _m.Called(ctx)
 
 	var r0 map[string]string
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (map[string]string, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(context.Context) (map[string]string, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func() map[string]string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) map[string]string); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -214,13 +220,14 @@ type Keeper_GetMetrics_Call struct {
 }
 
 // GetMetrics is a helper method to define mock.On call
-func (_e *Keeper_Expecter) GetMetrics() *Keeper_GetMetrics_Call {
-	return &Keeper_GetMetrics_Call{Call: _e.mock.On("GetMetrics")}
+//   - ctx context.Context
+func (_e *Keeper_Expecter) GetMetrics(ctx interface{}) *Keeper_GetMetrics_Call {
+	return &Keeper_GetMetrics_Call{Call: _e.mock.On("GetMetrics", ctx)}
 }
 
-func (_c *Keeper_GetMetrics_Call) Run(run func()) *Keeper_GetMetrics_Call {
+func (_c *Keeper_GetMetrics_Call) Run(run func(ctx context.Context)) *Keeper_GetMetrics_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -230,30 +237,30 @@ func (_c *Keeper_GetMetrics_Call) Return(_a0 map[string]string, _a1 error) *Keep
 	return _c
 }
 
-func (_c *Keeper_GetMetrics_Call) RunAndReturn(run func() (map[string]string, error)) *Keeper_GetMetrics_Call {
+func (_c *Keeper_GetMetrics_Call) RunAndReturn(run func(context.Context) (map[string]string, error)) *Keeper_GetMetrics_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// SetGauge provides a mock function with given fields: gauge
-func (_m *Keeper) SetGauge(gauge *metrics.Gauge) (*metrics.Gauge, error) {
-	ret := _m.Called(gauge)
+// SetGauge provides a mock function with given fields: ctx, gauge
+func (_m *Keeper) SetGauge(ctx context.Context, gauge *metrics.Gauge) (*metrics.Gauge, error) {
+	ret := _m.Called(ctx, gauge)
 
 	var r0 *metrics.Gauge
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*metrics.Gauge) (*metrics.Gauge, error)); ok {
-		return rf(gauge)
+	if rf, ok := ret.Get(0).(func(context.Context, *metrics.Gauge) (*metrics.Gauge, error)); ok {
+		return rf(ctx, gauge)
 	}
-	if rf, ok := ret.Get(0).(func(*metrics.Gauge) *metrics.Gauge); ok {
-		r0 = rf(gauge)
+	if rf, ok := ret.Get(0).(func(context.Context, *metrics.Gauge) *metrics.Gauge); ok {
+		r0 = rf(ctx, gauge)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*metrics.Gauge)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(*metrics.Gauge) error); ok {
-		r1 = rf(gauge)
+	if rf, ok := ret.Get(1).(func(context.Context, *metrics.Gauge) error); ok {
+		r1 = rf(ctx, gauge)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -267,14 +274,15 @@ type Keeper_SetGauge_Call struct {
 }
 
 // SetGauge is a helper method to define mock.On call
+//   - ctx context.Context
 //   - gauge *metrics.Gauge
-func (_e *Keeper_Expecter) SetGauge(gauge interface{}) *Keeper_SetGauge_Call {
-	return &Keeper_SetGauge_Call{Call: _e.mock.On("SetGauge", gauge)}
+func (_e *Keeper_Expecter) SetGauge(ctx interface{}, gauge interface{}) *Keeper_SetGauge_Call {
+	return &Keeper_SetGauge_Call{Call: _e.mock.On("SetGauge", ctx, gauge)}
 }
 
-func (_c *Keeper_SetGauge_Call) Run(run func(gauge *metrics.Gauge)) *Keeper_SetGauge_Call {
+func (_c *Keeper_SetGauge_Call) Run(run func(ctx context.Context, gauge *metrics.Gauge)) *Keeper_SetGauge_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*metrics.Gauge))
+		run(args[0].(context.Context), args[1].(*metrics.Gauge))
 	})
 	return _c
 }
@@ -284,7 +292,7 @@ func (_c *Keeper_SetGauge_Call) Return(_a0 *metrics.Gauge, _a1 error) *Keeper_Se
 	return _c
 }
 
-func (_c *Keeper_SetGauge_Call) RunAndReturn(run func(*metrics.Gauge) (*metrics.Gauge, error)) *Keeper_SetGauge_Call {
+func (_c *Keeper_SetGauge_Call) RunAndReturn(run func(context.Context, *metrics.Gauge) (*metrics.Gauge, error)) *Keeper_SetGauge_Call {
 	_c.Call.Return(run)
 	return _c
 }

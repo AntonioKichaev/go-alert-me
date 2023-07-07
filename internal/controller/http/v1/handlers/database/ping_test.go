@@ -16,7 +16,7 @@ import (
 func TestHadlerDB_GetPing(t *testing.T) {
 	db := mocks.NewStorageStatus(t)
 	r := chi.NewRouter()
-	v1.NewRouter(r, nil, nil, db)
+	v1.NewRouter(r, nil, nil, db, nil)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()

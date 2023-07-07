@@ -8,12 +8,14 @@ import (
 	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	memstorage "github.com/antoniokichaev/go-alert-me/internal/usecase/repo"
+	postgres2 "github.com/antoniokichaev/go-alert-me/internal/usecase/repo/postgres"
 	"github.com/antoniokichaev/go-alert-me/pkg/memorystorage"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/antoniokichaev/go-alert-me/pkg/postgres"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -29,48 +31,66 @@ func Run() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
-	db, err := postgres.New(ctx, dbConfig.DatabaseDNS)
-	defer func() { _ = db.Close() }()
-	if err != nil {
-		l.Error("init db: ", zap.Error(err))
-	}
 
-	storeCounter, err := memorystorage.NewMemoryStorage(
-		memorystorage.WithLogger(l),
-		memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
-		memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath),
-		memorystorage.WithRestore(serverConfig.Restore),
-	)
-	if err != nil {
-		l.Fatal("init storeCounter: ", zap.Error(err))
-	}
-	storeGauge, err := memorystorage.NewMemoryStorage(
-		memorystorage.WithLogger(l),
-		memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
-		memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath+".gauge"),
-		memorystorage.WithRestore(serverConfig.Restore),
-	)
-	if err != nil {
-		l.Fatal("init storeGauge: ", zap.Error(err))
+	var storage memstorage.Keeper
+	if dbConfig.DatabaseDNS != "" {
+		db, err := postgres.New(ctx, dbConfig.DatabaseDNS)
+		defer func() { _ = db.Close() }()
+		if err != nil {
+			l.Error("init db: ", zap.Error(err))
+		}
+
+		// create table
+		content, err := os.ReadFile("./internal/migrate/postgres/0001_init.sql")
+		if err != nil {
+			panic(err)
+		}
+		_, err = db.Exec(string(content))
+
+		if err != nil {
+			panic(err)
+		}
+
+		storage = postgres2.New(db.DB)
+	} else {
+		storeCounter, err := memorystorage.NewMemoryStorage(
+			memorystorage.WithLogger(l),
+			memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
+			memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath),
+			memorystorage.WithRestore(serverConfig.Restore),
+		)
+		if err != nil {
+			l.Fatal("init storeCounter: ", zap.Error(err))
+		}
+		storeGauge, err := memorystorage.NewMemoryStorage(
+			memorystorage.WithLogger(l),
+			memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
+			memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath+".gauge"),
+			memorystorage.WithRestore(serverConfig.Restore),
+		)
+		if err != nil {
+			l.Fatal("init storeGauge: ", zap.Error(err))
+		}
+		storage = memstorage.NewMemStorage(storeCounter, storeGauge)
 	}
 
 	router := chi.NewRouter()
 	router.Use(logger.LogMiddleware)
 	router.Use(mgzip.GzipMiddleware)
 
-	storeKeeper := memstorage.NewMemStorage(storeCounter, storeGauge)
 	{
-		updaterUc := usecase.NewUpdater(storeKeeper)
-		getterUc := usecase.NewReceiver(storeKeeper)
+		updaterUc := usecase.NewUpdater(storage)
+		getterUc := usecase.NewReceiver(storage)
 		v1.NewRouter(
 			router,
 			updaterUc,
 			getterUc,
-			db,
+			storage,
+			l,
 		)
 	}
 
-	err = http.ListenAndServe(serverConfig.GetMyAddress(), router)
+	err := http.ListenAndServe(serverConfig.GetMyAddress(), router)
 	if err != nil {
 		l.Fatal("main: ", zap.String("err", fmt.Sprintf("%v", err)))
 	}

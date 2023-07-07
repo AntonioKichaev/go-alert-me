@@ -6,8 +6,8 @@ import (
 )
 
 type Counter struct {
-	Name  string
-	Value int64
+	Name  string `db:"name"`
+	Value int64  `db:"value"`
 }
 
 func (c *Counter) GetValue() int64 {

@@ -6,6 +6,7 @@ import (
 	metricsEntity "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 )
@@ -20,11 +21,12 @@ const (
 )
 
 type UpdaterRoutes struct {
-	uc usecase.Updater
+	uc     usecase.Updater
+	logger *zap.Logger
 }
 
-func NewUpdaterRoutes(uc usecase.Updater) *UpdaterRoutes {
-	return &UpdaterRoutes{uc: uc}
+func NewUpdaterRoutes(uc usecase.Updater, logger *zap.Logger) *UpdaterRoutes {
+	return &UpdaterRoutes{uc: uc, logger: logger}
 }
 
 // UpdateMetrics принимает запрос ввида /update/{counter|gauge}/someMetric/527
@@ -49,7 +51,7 @@ func (h *UpdaterRoutes) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	_, err = h.uc.UpdateMetricByParams(m.ID, m.MType, m.GetTmpValue())
+	_, err = h.uc.UpdateMetricByParams(r.Context(), m.ID, m.MType, m.GetTmpValue())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -90,9 +92,10 @@ func (h *UpdaterRoutes) UpdateMetricsJSON(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	m, err = h.uc.UpdateMetric(m)
+	m, err = h.uc.UpdateMetric(r.Context(), m)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+
 		return
 	}
 	result, err := json.Marshal(m)

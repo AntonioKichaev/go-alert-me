@@ -5,6 +5,7 @@ import (
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/url"
 	"testing"
@@ -38,7 +39,7 @@ func TestUpdateMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName: _addCounter,
-				args:       []any{&metrics2.Counter{Name: "1", Value: 2}},
+				args:       []any{mock.Anything, &metrics2.Counter{Name: "1", Value: 2}},
 				returnArgs: []any{&metrics2.Counter{Name: "1", Value: 2}, nil},
 			},
 		},
@@ -75,7 +76,7 @@ func TestUpdateMetrics(t *testing.T) {
 			statusCode:  http.StatusOK,
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{methodName: _addCounter,
-				args:       []any{&metrics2.Counter{Name: "ram", Value: int64(-5)}},
+				args:       []any{mock.Anything, &metrics2.Counter{Name: "ram", Value: int64(-5)}},
 				returnArgs: []any{&metrics2.Counter{Name: "ram", Value: int64(-5)}, nil},
 			},
 		},
@@ -93,7 +94,7 @@ func TestUpdateMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName: _setGauge,
-				args:       []any{&metrics2.Gauge{Name: "ram", Value: 999.5999}},
+				args:       []any{mock.Anything, &metrics2.Gauge{Name: "ram", Value: 999.5999}},
 				returnArgs: []any{&metrics2.Gauge{Name: "ram", Value: 999.5999}, nil},
 			},
 		},
@@ -162,7 +163,7 @@ func TestUpdateJSON(t *testing.T) {
 			contentType: _contentTypeJSON,
 			mockStore: mockStoreRequest{
 				methodName: _addCounter,
-				args:       []any{&metrics2.Counter{Name: "1", Value: 2}},
+				args:       []any{mock.Anything, &metrics2.Counter{Name: "1", Value: 2}},
 				returnArgs: []any{&metrics2.Counter{Name: "1", Value: 2}, nil},
 			},
 			jsonBody:     `{"id": "1", "type": "counter", "delta": 2}`,
@@ -206,7 +207,7 @@ func TestUpdateJSON(t *testing.T) {
 			contentType: _contentTypeJSON,
 			mockStore: mockStoreRequest{
 				methodName: _setGauge,
-				args:       []any{&metrics2.Gauge{Name: "ram", Value: 999.5999}},
+				args:       []any{mock.Anything, &metrics2.Gauge{Name: "ram", Value: 999.5999}},
 				returnArgs: []any{&metrics2.Gauge{Name: "ram", Value: 999.5999}, nil},
 			},
 			jsonBody: `{"id":"ram", "type": "gauge", "value": 999.5999}`,

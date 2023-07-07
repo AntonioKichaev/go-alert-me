@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 )
 
@@ -13,19 +14,19 @@ func NewReceiver(repo ReceiverMetricRepo) *ReceiverMetricUseCase {
 	return rmu
 }
 
-func (receiver *ReceiverMetricUseCase) GetMetricByName(name, metricType string) (*metrics2.Metrics, error) {
+func (receiver *ReceiverMetricUseCase) GetMetricByName(ctx context.Context, name, metricType string) (*metrics2.Metrics, error) {
 	var err error
 	result := &metrics2.Metrics{ID: name, MType: metricType}
 	switch metrics2.MetricType(result.MType) {
 	case metrics2.GaugeName:
-		gauge, err := receiver.GetGauge(result.ID)
+		gauge, err := receiver.GetGauge(ctx, result.ID)
 		if err != nil {
 			return nil, err
 		}
 		result.Value = new(float64)
 		result.SetValue(gauge.GetValue())
 	case metrics2.CounterName:
-		counter, err := receiver.GetCounter(result.ID)
+		counter, err := receiver.GetCounter(ctx, result.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -37,13 +38,13 @@ func (receiver *ReceiverMetricUseCase) GetMetricByName(name, metricType string) 
 	return result, err
 }
 
-func (receiver *ReceiverMetricUseCase) GetCounter(name string) (*metrics2.Counter, error) {
-	return receiver.repo.GetCounter(name)
+func (receiver *ReceiverMetricUseCase) GetCounter(ctx context.Context, name string) (*metrics2.Counter, error) {
+	return receiver.repo.GetCounter(ctx, name)
 }
-func (receiver *ReceiverMetricUseCase) GetGauge(name string) (*metrics2.Gauge, error) {
-	return receiver.repo.GetGauge(name)
+func (receiver *ReceiverMetricUseCase) GetGauge(ctx context.Context, name string) (*metrics2.Gauge, error) {
+	return receiver.repo.GetGauge(ctx, name)
 }
 
-func (receiver *ReceiverMetricUseCase) GetMetrics() (map[string]string, error) {
-	return receiver.repo.GetMetrics()
+func (receiver *ReceiverMetricUseCase) GetMetrics(ctx context.Context) (map[string]string, error) {
+	return receiver.repo.GetMetrics(ctx)
 }
