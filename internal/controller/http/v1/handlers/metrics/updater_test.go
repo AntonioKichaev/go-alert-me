@@ -1,6 +1,7 @@
 package metrics_test
 
 import (
+	"errors"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
 	"github.com/go-resty/resty/v2"
@@ -279,6 +280,18 @@ func TestUpdateMetricsBatchJSON(t *testing.T) {
 			jsonBody:     `[{"id": "1", "type": "counter", "delta": 2}]`,
 			jsonResponse: "",
 		},
+		"add counter error": {
+			method:     http.MethodPost,
+			targetURL:  "/updates/",
+			statusCode: http.StatusInternalServerError,
+			mockStore: mockStoreRequest{
+				methodName: _caller,
+				args:       []any{mock.Anything, []metrics2.Counter{{Name: "1", Value: 2}}},
+				returnArgs: []any{errors.New("error")},
+			},
+			jsonBody:     `[{"id": "1", "type": "counter", "delta": 2}]`,
+			jsonResponse: "",
+		},
 		"zero_value ": {
 			method:     http.MethodPost,
 			targetURL:  "/updates/",
@@ -326,6 +339,7 @@ func TestUpdateMetricsBatchJSON(t *testing.T) {
 	}
 	for key, tc := range tt {
 		t.Run(key, func(t *testing.T) {
+			*mockStore = *mocks.NewKeeper(t)
 			if len(tc.mockStore.args) != 0 {
 				mockStore.On("UpdateMetricCounterBatch", tc.mockStore.args...).Return(tc.mockStore.returnArgs...).Maybe()
 				mockStore.On("UpdateMetricGaugeBatch", tc.mockStore.args...).Return(tc.mockStore.returnArgs...).Maybe()
