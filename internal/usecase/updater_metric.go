@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 )
 
@@ -70,4 +71,50 @@ func (u *UpdaterUseCase) updateMetric(ctx context.Context, m *metrics2.Metrics) 
 		err = metrics2.ErrorUnknownMetricType
 	}
 	return m, err
+}
+
+func (u *UpdaterUseCase) UpdateMetricBatch(ctx context.Context, metrics []metrics2.Metrics) error {
+	const fName = "UpdaterUseCase.UpdateMetricBatch"
+
+	counters := make([]metrics2.Counter, 0, len(metrics))
+	gaugesUniq := make(map[string]metrics2.Gauge, len(metrics))
+
+	for _, m := range metrics {
+		switch metrics2.MetricType(m.MType) {
+		case metrics2.GaugeName:
+
+			g, err := m.ToGauge()
+			if err != nil {
+				return fmt.Errorf("%s ToGauge %w", fName, err)
+			}
+			gaugesUniq[g.GetName()] = *g
+		case metrics2.CounterName:
+			c, err := m.ToCounter()
+			if err != nil {
+				return fmt.Errorf("%s ToCounter %w", fName, err)
+			}
+			counters = append(counters, *c)
+		default:
+			return metrics2.ErrorUnknownMetricType
+		}
+	}
+	gauges := make([]metrics2.Gauge, 0, len(gaugesUniq))
+	for _, g := range gaugesUniq {
+		gauges = append(gauges, g)
+	}
+	if len(counters) > 0 {
+		err := u.repo.UpdateMetricCounterBatch(ctx, counters)
+		if err != nil {
+			return fmt.Errorf("%s UpdateMetricCounterBatch %w", fName, err)
+		}
+	}
+
+	if len(gauges) > 0 {
+		err := u.repo.UpdateMetricGaugeBatch(ctx, gauges)
+		if err != nil {
+			return fmt.Errorf("%s UpdateMetricGaugeBatch %w", fName, err)
+		}
+	}
+
+	return nil
 }

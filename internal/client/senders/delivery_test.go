@@ -80,9 +80,9 @@ func TestLineMan_Delivery(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockStore.On("AddCounter", mock.Anything, &metrics.Counter{Name: "ram", Value: int64(55)}).Maybe().Return(&metrics.Counter{}, nil)
 			lm := &lineMan{
-				receiver:   tt.fields.receiver,
-				httpclient: tt.fields.httpclient,
-				methodSend: tt.fields.methodSend,
+				endpointRawData: tt.fields.receiver,
+				httpclient:      tt.fields.httpclient,
+				methodSend:      tt.fields.methodSend,
 			}
 			err := lm.Delivery(tt.args.data)
 			tt.wantErr(t, err, fmt.Sprintf("Delivery(%v)", tt.args.data))

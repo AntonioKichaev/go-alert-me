@@ -242,6 +242,47 @@ func (_c *Keeper_GetMetrics_Call) RunAndReturn(run func(context.Context) (map[st
 	return _c
 }
 
+// Ping provides a mock function with given fields:
+func (_m *Keeper) Ping() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Keeper_Ping_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Ping'
+type Keeper_Ping_Call struct {
+	*mock.Call
+}
+
+// Ping is a helper method to define mock.On call
+func (_e *Keeper_Expecter) Ping() *Keeper_Ping_Call {
+	return &Keeper_Ping_Call{Call: _e.mock.On("Ping")}
+}
+
+func (_c *Keeper_Ping_Call) Run(run func()) *Keeper_Ping_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Keeper_Ping_Call) Return(_a0 error) *Keeper_Ping_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Keeper_Ping_Call) RunAndReturn(run func() error) *Keeper_Ping_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // SetGauge provides a mock function with given fields: ctx, gauge
 func (_m *Keeper) SetGauge(ctx context.Context, gauge *metrics.Gauge) (*metrics.Gauge, error) {
 	ret := _m.Called(ctx, gauge)
@@ -293,6 +334,92 @@ func (_c *Keeper_SetGauge_Call) Return(_a0 *metrics.Gauge, _a1 error) *Keeper_Se
 }
 
 func (_c *Keeper_SetGauge_Call) RunAndReturn(run func(context.Context, *metrics.Gauge) (*metrics.Gauge, error)) *Keeper_SetGauge_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateMetricCounterBatch provides a mock function with given fields: ctx, _a1
+func (_m *Keeper) UpdateMetricCounterBatch(ctx context.Context, _a1 []metrics.Counter) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []metrics.Counter) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Keeper_UpdateMetricCounterBatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateMetricCounterBatch'
+type Keeper_UpdateMetricCounterBatch_Call struct {
+	*mock.Call
+}
+
+// UpdateMetricCounterBatch is a helper method to define mock.On call
+//   - ctx context.Context
+//   - _a1 []metrics.Counter
+func (_e *Keeper_Expecter) UpdateMetricCounterBatch(ctx interface{}, _a1 interface{}) *Keeper_UpdateMetricCounterBatch_Call {
+	return &Keeper_UpdateMetricCounterBatch_Call{Call: _e.mock.On("UpdateMetricCounterBatch", ctx, _a1)}
+}
+
+func (_c *Keeper_UpdateMetricCounterBatch_Call) Run(run func(ctx context.Context, _a1 []metrics.Counter)) *Keeper_UpdateMetricCounterBatch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]metrics.Counter))
+	})
+	return _c
+}
+
+func (_c *Keeper_UpdateMetricCounterBatch_Call) Return(_a0 error) *Keeper_UpdateMetricCounterBatch_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Keeper_UpdateMetricCounterBatch_Call) RunAndReturn(run func(context.Context, []metrics.Counter) error) *Keeper_UpdateMetricCounterBatch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateMetricGaugeBatch provides a mock function with given fields: ctx, _a1
+func (_m *Keeper) UpdateMetricGaugeBatch(ctx context.Context, _a1 []metrics.Gauge) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []metrics.Gauge) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Keeper_UpdateMetricGaugeBatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateMetricGaugeBatch'
+type Keeper_UpdateMetricGaugeBatch_Call struct {
+	*mock.Call
+}
+
+// UpdateMetricGaugeBatch is a helper method to define mock.On call
+//   - ctx context.Context
+//   - _a1 []metrics.Gauge
+func (_e *Keeper_Expecter) UpdateMetricGaugeBatch(ctx interface{}, _a1 interface{}) *Keeper_UpdateMetricGaugeBatch_Call {
+	return &Keeper_UpdateMetricGaugeBatch_Call{Call: _e.mock.On("UpdateMetricGaugeBatch", ctx, _a1)}
+}
+
+func (_c *Keeper_UpdateMetricGaugeBatch_Call) Run(run func(ctx context.Context, _a1 []metrics.Gauge)) *Keeper_UpdateMetricGaugeBatch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]metrics.Gauge))
+	})
+	return _c
+}
+
+func (_c *Keeper_UpdateMetricGaugeBatch_Call) Return(_a0 error) *Keeper_UpdateMetricGaugeBatch_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Keeper_UpdateMetricGaugeBatch_Call) RunAndReturn(run func(context.Context, []metrics.Gauge) error) *Keeper_UpdateMetricGaugeBatch_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -69,11 +69,17 @@ func (agent *agentBond) Run() {
 
 func (agent *agentBond) sendReport() {
 	for ; ; time.Sleep(agent.reportInterval) {
-		data := agent.makeFormatToSend()
+		data, mSlice := agent.makeFormatToSend()
 		if len(data) > 0 {
 			err := agent.delivery.DeliveryBody(data)
 			if err != nil {
-				agent.logger.Error("agent.Run() delivery err:=", zap.Error(err))
+				agent.logger.Error("agent.Run() DeliveryBody", zap.Error(err))
+			}
+		}
+		if len(mSlice) > 0 {
+			err := agent.delivery.DeliveryMetricsJSON(mSlice)
+			if err != nil {
+				agent.logger.Error("agent.Run() DeliveryMetricsJSON", zap.Error(err))
 			}
 		}
 		agent.resetState()
@@ -116,13 +122,14 @@ func (agent *agentBond) updateState() {
 	}
 }
 
-func (agent *agentBond) makeFormatToSend() [][]byte {
+func (agent *agentBond) makeFormatToSend() ([][]byte, []metrics.Metrics) {
 	agent.mu.RLock()
 	defer agent.mu.RUnlock()
 	if len(agent.metricsState) == 0 {
-		return nil
+		return nil, nil
 	}
-	res := make([][]byte, 0, len(agent.metricsState))
+	dataBytes := make([][]byte, 0, len(agent.metricsState))
+	metricsSlice := make([]metrics.Metrics, 0, len(agent.metricsState))
 	for key, val := range agent.metricsState {
 		s := strings.Split(key, "/")
 		if len(s) < 2 {
@@ -139,8 +146,8 @@ func (agent *agentBond) makeFormatToSend() [][]byte {
 		if err != nil {
 			continue
 		}
-		res = append(res, b)
-
+		dataBytes = append(dataBytes, b)
+		metricsSlice = append(metricsSlice, *t)
 	}
-	return res
+	return dataBytes, metricsSlice
 }

@@ -18,8 +18,9 @@ func NewRouter(handler *chi.Mux,
 	up := metrics.NewUpdaterRoutes(updater, logger)
 	handler.Route("/update", func(r chi.Router) {
 		r.Post(fmt.Sprintf("/{%s}/{%s}/{%s}", metrics.MetricType, metrics.MetricName, metrics.MetricValue), up.UpdateMetrics)
-		r.Post("/", up.UpdateMetricsJSON)
+		r.Post("/", up.UpdateMetricJSON)
 	})
+	handler.Post("/updates/", up.UpdateMetricsBatchJSON)
 
 	rec := metrics.NewReceiver(receiver)
 

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTs gauges
     );
 
 CREATE TABLE IF NOT EXISTS counts(
-                                     id SERIAL PRIMARY KEY,
-                                     name VARCHAR(255) NOT NULL UNIQUE,
+ id SERIAL PRIMARY KEY,
+ name VARCHAR(255) NOT NULL,
     value INTEGER NOT NULL
     );

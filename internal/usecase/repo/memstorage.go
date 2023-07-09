@@ -21,6 +21,25 @@ type MemStorage struct {
 	storeGauge   *memorystorage.MemoryStorage
 }
 
+func (m *MemStorage) UpdateMetricCounterBatch(ctx context.Context, metrics []metrics2.Counter) error {
+	for _, counter := range metrics {
+		_, err := m.AddCounter(ctx, &counter)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (m *MemStorage) UpdateMetricGaugeBatch(ctx context.Context, metrics []metrics2.Gauge) error {
+	for _, gauge := range metrics {
+		_, err := m.SetGauge(ctx, &gauge)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func NewMemStorage(storeCounter, storeGauge *memorystorage.MemoryStorage) Keeper {
 	return newMemStorage(storeCounter, storeGauge)
 }

@@ -14,7 +14,7 @@ import (
 func TestUpdateMetrics(t *testing.T) {
 	mockStore := mocks.NewKeeper(t)
 
-	srv := getServer(mockStore)
+	srv := getServer(mockStore, t)
 	defer srv.Close()
 
 	const _addCounter = "AddCounter"
@@ -136,7 +136,7 @@ func TestUpdateMetrics(t *testing.T) {
 func TestUpdateJSON(t *testing.T) {
 	mockStore := mocks.NewKeeper(t)
 
-	srv := getServer(mockStore)
+	srv := getServer(mockStore, t)
 	defer srv.Close()
 
 	const _addCounter = "AddCounter"
@@ -240,6 +240,109 @@ func TestUpdateJSON(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tc.statusCode, response.StatusCode())
 			assert.Equal(t, tc.contentType, response.Header().Get("Content-Type"))
+			mockStore.AssertExpectations(t)
+
+		})
+	}
+}
+
+func TestUpdateMetricsBatchJSON(t *testing.T) {
+	mockStore := mocks.NewKeeper(t)
+
+	srv := getServer(mockStore, t)
+	defer srv.Close()
+
+	const _caller = "UpdateMetricCounterBatch"
+	type mockStoreRequest struct {
+		methodName string
+		args       []any
+		returnArgs []any
+	}
+	tt := map[string]struct {
+		method       string
+		targetURL    string
+		statusCode   int
+		mockStore    mockStoreRequest
+		wantErr      error
+		jsonBody     string
+		jsonResponse string
+	}{
+		"add counter ": {
+			method:     http.MethodPost,
+			targetURL:  "/updates/",
+			statusCode: http.StatusOK,
+			mockStore: mockStoreRequest{
+				methodName: _caller,
+				args:       []any{mock.Anything, []metrics2.Counter{{Name: "1", Value: 2}}},
+				returnArgs: []any{nil},
+			},
+			jsonBody:     `[{"id": "1", "type": "counter", "delta": 2}]`,
+			jsonResponse: "",
+		},
+		"zero_value ": {
+			method:     http.MethodPost,
+			targetURL:  "/updates/",
+			statusCode: http.StatusNotFound,
+			jsonBody:   `[{"id": "1", "type": "counter"}]`,
+		},
+		"zero_metrics ": {
+			method:     http.MethodPost,
+			targetURL:  "/updates/",
+			statusCode: http.StatusNotFound,
+			mockStore:  mockStoreRequest{},
+			jsonBody:   `[{"type": "counter", "delta": 2}]`,
+		},
+		"unknown_metric_type ": {
+			method:     http.MethodPost,
+			targetURL:  "/updates/",
+			statusCode: http.StatusBadRequest,
+			mockStore:  mockStoreRequest{},
+			jsonBody:   `[{"id":"er", "type": "xerp", "delta": 5}]`,
+		},
+		"negative_float_value ": {
+			method:     http.MethodPost,
+			targetURL:  "/updates/",
+			statusCode: http.StatusBadRequest,
+			mockStore:  mockStoreRequest{},
+			jsonBody:   `[{"id":"ram", "type": "counter", "delta": -2.2}]`,
+		},
+		"simple_set_gauge ": {
+			method:     http.MethodPost,
+			targetURL:  "/updates/",
+			statusCode: http.StatusOK,
+			mockStore: mockStoreRequest{
+				methodName: _caller,
+				args:       []any{mock.Anything, []metrics2.Gauge{{Name: "ram", Value: 999.5999}}},
+				returnArgs: []any{nil},
+			},
+			jsonBody: `[{"id":"ram", "type": "gauge", "value": 999.5999}]`,
+		},
+		"none_value_set_gauge ": {
+			method:     http.MethodPost,
+			targetURL:  "/updates/",
+			statusCode: http.StatusBadRequest,
+			jsonBody:   `[{"id":"ram", "type": "gauge", "value": "none"}]`,
+		},
+	}
+	for key, tc := range tt {
+		t.Run(key, func(t *testing.T) {
+			if len(tc.mockStore.args) != 0 {
+				mockStore.On("UpdateMetricCounterBatch", tc.mockStore.args...).Return(tc.mockStore.returnArgs...).Maybe()
+				mockStore.On("UpdateMetricGaugeBatch", tc.mockStore.args...).Return(tc.mockStore.returnArgs...).Maybe()
+			}
+
+			request := resty.New().R()
+			request.Method = tc.method
+			u, err := url.JoinPath(srv.URL, tc.targetURL)
+			assert.NoError(t, err)
+			request.URL = u
+			if len(tc.jsonBody) > 0 {
+				request.SetHeader("Content-Type", "application/json")
+				request.SetBody(tc.jsonBody)
+			}
+			response, err := request.Send()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.statusCode, response.StatusCode())
 			mockStore.AssertExpectations(t)
 
 		})

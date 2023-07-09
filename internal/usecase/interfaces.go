@@ -11,10 +11,13 @@ type (
 		UpdateMetric(ctx context.Context, m *metrics2.Metrics) (*metrics2.Metrics, error)
 		AddCounter(ctx context.Context, name string, value any) (*metrics2.Counter, error)
 		SetGauge(ctx context.Context, name string, value any) (*metrics2.Gauge, error)
+		UpdateMetricBatch(ctx context.Context, metrics []metrics2.Metrics) error
 	}
 	UpdaterRepo interface {
 		AddCounter(ctx context.Context, counter *metrics2.Counter) (*metrics2.Counter, error)
 		SetGauge(ctx context.Context, gauge *metrics2.Gauge) (*metrics2.Gauge, error)
+		UpdateMetricCounterBatch(ctx context.Context, metrics []metrics2.Counter) error
+		UpdateMetricGaugeBatch(ctx context.Context, metrics []metrics2.Gauge) error
 	}
 )
 

@@ -3,6 +3,7 @@ package metrics_test
 import (
 	"errors"
 	"github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	mocksDatabase "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1/handlers/database/mocks"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
@@ -20,17 +21,19 @@ import (
 const _contentTypeText = "text/plain; charset=utf-8"
 const _contentTypeJSON = "application/json"
 
-func getServer(mockStore *mocks.Keeper) *httptest.Server {
+func getServer(mockStore *mocks.Keeper, t *testing.T) *httptest.Server {
 	getterUc := usecase.NewReceiver(mockStore)
 	updaterUc := usecase.NewUpdater(mockStore)
+	storageStatus := mocksDatabase.NewStorageStatus(t)
+
 	r := chi.NewRouter()
-	v1.NewRouter(r, updaterUc, getterUc, nil, nil)
+	v1.NewRouter(r, updaterUc, getterUc, storageStatus, nil)
 	return httptest.NewServer(r)
 }
 
 func TestGetMetrics(t *testing.T) {
 	mockStore := mocks.NewKeeper(t)
-	srv := getServer(mockStore)
+	srv := getServer(mockStore, t)
 	defer srv.Close()
 
 	const _getGauge = "GetGauge"
@@ -110,7 +113,7 @@ func TestGetMetrics(t *testing.T) {
 
 func TestGetAllMetrics(t *testing.T) {
 	mockStore := mocks.NewKeeper(t)
-	srv := getServer(mockStore)
+	srv := getServer(mockStore, t)
 	defer srv.Close()
 
 	tt := map[string]struct {
@@ -151,7 +154,7 @@ func TestGetAllMetrics(t *testing.T) {
 
 func TestGetMetricsJSON(t *testing.T) {
 	mockStore := mocks.NewKeeper(t)
-	srv := getServer(mockStore)
+	srv := getServer(mockStore, t)
 	defer srv.Close()
 
 	const _getGauge = "GetGauge"

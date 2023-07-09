@@ -23,6 +23,89 @@ type Storage struct {
 	builder sq.StatementBuilderType
 }
 
+func (s *Storage) UpdateMetricCounterBatch(ctx context.Context, metrics []metrics2.Counter) error {
+	if len(metrics) == 0 {
+		return nil
+	}
+	const fName = "postgres.UpdateMetricCounterBatch"
+	tx, err := s.db.BeginTxx(ctx, nil)
+	defer func() {
+		if err != nil {
+			if errRb := tx.Rollback(); errRb != nil {
+				err = fmt.Errorf("err rollback %w", err)
+				return
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+	insertBuilder := s.builder.
+		Insert(_countTable).
+		Columns("name", "value")
+	for _, counter := range metrics {
+		insertBuilder = insertBuilder.Values(counter.GetName(), counter.GetValue())
+	}
+
+	sqlRes, args, err := insertBuilder.ToSql()
+	if err != nil {
+		return fmt.Errorf("%s builder %w", fName, err)
+	}
+
+	result, err := tx.ExecContext(ctx, sqlRes, args...)
+	if err != nil {
+		return fmt.Errorf("%s ExecContext %w", fName, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s RowsAffected %w", fName, err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("%s RowsAffected 0 %w", fName, err)
+	}
+	return nil
+}
+
+func (s *Storage) UpdateMetricGaugeBatch(ctx context.Context, metrics []metrics2.Gauge) error {
+	const fName = "postgres.UpdateMetricCounterBatch"
+	tx, err := s.db.BeginTxx(ctx, nil)
+	defer func() {
+		if err != nil {
+			if errRb := tx.Rollback(); errRb != nil {
+				err = fmt.Errorf("err rollback %w", err)
+				return
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+	insertBuilder := s.builder.
+		Insert(_gaugeTable).
+		Columns("name", "value")
+	for _, counter := range metrics {
+		insertBuilder = insertBuilder.Values(counter.GetName(), counter.GetValue())
+	}
+
+	sqlRes, args, err := insertBuilder.Suffix("ON CONFLICT(name) DO UPDATE SET value=EXCLUDED.value").ToSql()
+	if err != nil {
+		return fmt.Errorf("%s builder %w", fName, err)
+	}
+
+	result, err := tx.ExecContext(ctx, sqlRes, args...)
+	if err != nil {
+		return fmt.Errorf("%s ExecContext %w", fName, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s RowsAffected %w", fName, err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("%s RowsAffected 0 %w", fName, err)
+	}
+	return nil
+}
+
 func (s *Storage) AddCounter(ctx context.Context, counter *metrics2.Counter) (c *metrics2.Counter, err error) {
 	tx, err := s.db.BeginTxx(ctx, nil)
 	defer func() {
@@ -36,18 +119,10 @@ func (s *Storage) AddCounter(ctx context.Context, counter *metrics2.Counter) (c 
 		err = tx.Commit()
 	}()
 
-	sqlReq, args, err := s.builder.
-		Select("value").
-		From(_countTable).
-		Where(sq.Eq{"name": counter.GetName()}).
-		ToSql()
-	var oldValue int
-	err = tx.Get(&oldValue, sqlReq, args...)
 	if err != sql.ErrNoRows && err != nil {
 		return nil, err
 	}
 
-	counter.SetValue(counter.GetValue() + int64(oldValue))
 	c, err = s.addCounter(ctx, tx, counter)
 
 	return c, err
@@ -71,7 +146,7 @@ func (s *Storage) SetGauge(ctx context.Context, gauge *metrics2.Gauge) (g *metri
 
 func (s *Storage) GetCounter(ctx context.Context, name string) (*metrics2.Counter, error) {
 	const fName = "postgres.GetCounter"
-	sqlReq, args, err := s.builder.Select("value").From(_countTable).Where(sq.Eq{"name": name}).ToSql()
+	sqlReq, args, err := s.builder.Select("sum(value)").From(_countTable).GroupBy("name").Where(sq.Eq{"name": name}).ToSql()
 
 	if err != nil {
 		return nil, fmt.Errorf("%s builder %w", fName, err)
@@ -102,7 +177,6 @@ func (s *Storage) GetGauge(ctx context.Context, name string) (*metrics2.Gauge, e
 }
 
 func (s *Storage) GetMetrics(ctx context.Context) (map[string]string, error) {
-	const fName = "postgres.GetMetrics"
 
 	mp := make(map[string]string, 0)
 	counters, err := s.getCounters(ctx)
@@ -126,7 +200,9 @@ func (s *Storage) getCounters(ctx context.Context) (map[string]string, error) {
 	const fName = "postgres.getCounters"
 
 	sqlReq, args, err :=
-		s.builder.Select("name", "value").From(_countTable).ToSql()
+		s.builder.Select("name", "sum(value) as value").
+			GroupBy("name").
+			From(_countTable).ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("%s builder %w", fName, err)
 	}
@@ -177,7 +253,6 @@ func (s *Storage) addCounter(ctx context.Context, tx *sqlx.Tx, counter *metrics2
 		Insert(_countTable).
 		Columns("name", "value").
 		Values(counter.GetName(), counter.GetValue()).
-		Suffix("ON CONFLICT(name) DO UPDATE SET value=$2").
 		ToSql()
 
 	if err != nil {
@@ -207,7 +282,7 @@ func (s *Storage) setGauge(ctx context.Context, tx *sqlx.Tx, gauge *metrics2.Gau
 		Insert(_gaugeTable).
 		Columns("name", "value").
 		Values(gauge.GetName(), gauge.GetValue()).
-		Suffix("ON CONFLICT(name) DO UPDATE SET value =$2").
+		Suffix("ON CONFLICT(name) DO UPDATE SET value =EXCLUDED.value").
 		ToSql()
 
 	if err != nil {
