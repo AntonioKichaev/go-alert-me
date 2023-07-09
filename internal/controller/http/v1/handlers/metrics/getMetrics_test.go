@@ -3,12 +3,14 @@ package metrics_test
 import (
 	"errors"
 	"github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	mocksDatabase "github.com/antoniokichaev/go-alert-me/internal/controller/http/v1/handlers/database/mocks"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -19,17 +21,19 @@ import (
 const _contentTypeText = "text/plain; charset=utf-8"
 const _contentTypeJSON = "application/json"
 
-func getServer(mockStore *mocks.Keeper) *httptest.Server {
+func getServer(mockStore *mocks.Keeper, t *testing.T) *httptest.Server {
 	getterUc := usecase.NewReceiver(mockStore)
 	updaterUc := usecase.NewUpdater(mockStore)
+	storageStatus := mocksDatabase.NewStorageStatus(t)
+
 	r := chi.NewRouter()
-	v1.NewRouter(r, updaterUc, getterUc)
+	v1.NewRouter(r, updaterUc, getterUc, storageStatus, nil)
 	return httptest.NewServer(r)
 }
 
 func TestGetMetrics(t *testing.T) {
 	mockStore := mocks.NewKeeper(t)
-	srv := getServer(mockStore)
+	srv := getServer(mockStore, t)
 	defer srv.Close()
 
 	const _getGauge = "GetGauge"
@@ -55,7 +59,7 @@ func TestGetMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
-				args:        []any{"my"},
+				args:        []any{mock.Anything, "my"},
 				returnValue: []any{&metrics2.Counter{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
@@ -67,7 +71,7 @@ func TestGetMetrics(t *testing.T) {
 			contentType: _contentTypeText,
 			mockStore: mockStoreRequest{
 				methodName:  _getGauge,
-				args:        []any{"my"},
+				args:        []any{mock.Anything, "my"},
 				returnValue: []any{&metrics2.Gauge{Name: "my", Value: 5}, nil},
 			},
 			wantErr: false,
@@ -80,7 +84,7 @@ func TestGetMetrics(t *testing.T) {
 			wantErr:     true,
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
-				args:        []any{"unk"},
+				args:        []any{mock.Anything, "unk"},
 				returnValue: []any{nil, errors.New("NotFound")},
 			},
 		},
@@ -109,7 +113,7 @@ func TestGetMetrics(t *testing.T) {
 
 func TestGetAllMetrics(t *testing.T) {
 	mockStore := mocks.NewKeeper(t)
-	srv := getServer(mockStore)
+	srv := getServer(mockStore, t)
 	defer srv.Close()
 
 	tt := map[string]struct {
@@ -133,7 +137,7 @@ func TestGetAllMetrics(t *testing.T) {
 	}
 	for key, tc := range tt {
 		t.Run(key, func(t *testing.T) {
-			mockStore.EXPECT().GetMetrics().Return(tc.returnStore, tc.wantErr)
+			mockStore.EXPECT().GetMetrics(mock.Anything).Return(tc.returnStore, tc.wantErr)
 			request := resty.New().R()
 			request.Method = http.MethodGet
 			request.URL = srv.URL
@@ -150,7 +154,7 @@ func TestGetAllMetrics(t *testing.T) {
 
 func TestGetMetricsJSON(t *testing.T) {
 	mockStore := mocks.NewKeeper(t)
-	srv := getServer(mockStore)
+	srv := getServer(mockStore, t)
 	defer srv.Close()
 
 	const _getGauge = "GetGauge"
@@ -178,7 +182,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			contentType: _contentTypeJSON,
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
-				args:        []any{"my"},
+				args:        []any{mock.Anything, "my"},
 				returnValue: []any{&metrics2.Counter{Name: "my", Value: 5}, nil},
 			},
 			wantErr:      false,
@@ -192,7 +196,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			contentType: _contentTypeJSON,
 			mockStore: mockStoreRequest{
 				methodName:  _getGauge,
-				args:        []any{"my"},
+				args:        []any{mock.Anything, "my"},
 				returnValue: []any{&metrics2.Gauge{Name: "my", Value: 5}, nil},
 			},
 			wantErr:      false,
@@ -207,7 +211,7 @@ func TestGetMetricsJSON(t *testing.T) {
 			wantErr:     true,
 			mockStore: mockStoreRequest{
 				methodName:  _getCounter,
-				args:        []any{"unk"},
+				args:        []any{mock.Anything, "unk"},
 				returnValue: []any{nil, errors.New("NotFound")},
 			},
 			jsonBody:     `{"id":"unk","type":"counter"}`,

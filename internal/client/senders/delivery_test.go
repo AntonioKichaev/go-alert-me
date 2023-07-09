@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -19,7 +20,7 @@ func getServer(mockStore *mocks.Keeper) *httptest.Server {
 	getterUc := usecase.NewReceiver(mockStore)
 	updaterUc := usecase.NewUpdater(mockStore)
 	r := chi.NewRouter()
-	v1.NewRouter(r, updaterUc, getterUc)
+	v1.NewRouter(r, updaterUc, getterUc, nil, nil)
 	return httptest.NewServer(r)
 }
 
@@ -77,11 +78,11 @@ func TestLineMan_Delivery(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockStore.On("AddCounter", &metrics.Counter{Name: "ram", Value: int64(55)}).Maybe().Return(&metrics.Counter{}, nil)
+			mockStore.On("AddCounter", mock.Anything, &metrics.Counter{Name: "ram", Value: int64(55)}).Maybe().Return(&metrics.Counter{}, nil)
 			lm := &lineMan{
-				receiver:   tt.fields.receiver,
-				httpclient: tt.fields.httpclient,
-				methodSend: tt.fields.methodSend,
+				endpointRawData: tt.fields.receiver,
+				httpclient:      tt.fields.httpclient,
+				methodSend:      tt.fields.methodSend,
 			}
 			err := lm.Delivery(tt.args.data)
 			tt.wantErr(t, err, fmt.Sprintf("Delivery(%v)", tt.args.data))

@@ -34,12 +34,14 @@ func SetName(name string) Option {
 
 	}
 }
-func InitDeliveryAddress(address, method string) Option {
+func InitDeliveryAddress(endpointRawData, endpointJSONData, method string) Option {
 	return func(agent *agentBond) {
 		delivery, err := senders.NewLineMan(
-			senders.SetReceiver(address),
+			senders.SetEndpointJSONData(endpointJSONData),
+			senders.SetEndpointRaw(endpointRawData),
 			senders.SetMethodSend(method),
 			senders.SetZipper(agent.zipper),
+			senders.SetLogger(agent.logger),
 		) //todo: чо-то с ошибкой делать
 		if err != nil {
 			panic(fmt.Errorf("InitDeliveryAddress:%w", err))

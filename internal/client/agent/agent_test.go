@@ -45,6 +45,7 @@ func Test_agentBond_Run(t *testing.T) {
 		t.Run(key, func(t *testing.T) {
 			//mockDelivery.On("DeliveryBody", mock.Anything).Return(nil).Maybe()
 			mockDelivery.EXPECT().DeliveryBody(mock.Anything).Return(nil).Maybe()
+			mockDelivery.EXPECT().DeliveryMetrics(mock.Anything).Return(nil).Maybe()
 			mockGrabber.EXPECT().GetSnapshot().Return(map[string]string{
 				"counter/test": "5",
 				"gauge/age":    "55",
