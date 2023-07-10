@@ -103,4 +103,16 @@ iter12: build_server build_client
             -database-dsn=$(DATABASE_DSN) \
 		    -server-port=$(SERVER_PORT) \
 		    -source-path=.
-all: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9 iter10 iter11 iter12
+
+iter13: build_server build_client
+	 metricstest -test.v -test.run=^TestIteration13$$ \
+		    -agent-binary-path=$(AGENT_PATH) \
+			-binary-path=$(SERVER_PATH) \
+		    -database-dsn=$(DATABASE_DSN) \
+			-server-port=$(SERVER_PORT) \
+			-source-path=.
+
+
+all: iter1 iter2 iter3 iter4 iter5 \
+	iter6 iter7 iter8 iter9 iter10 \
+	iter11 iter12 iter13

@@ -4,28 +4,43 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgerrcode"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
+	"time"
 )
+
+const _maxTryConnect = 3
 
 type Postgres struct {
 	*sqlx.DB
 	isInit bool
 }
 
-func New(ctx context.Context, dataSource string) (*Postgres, error) {
-	p := &Postgres{}
+func New(ctx context.Context, dataSource string) (p *Postgres, err error) {
+	p = &Postgres{}
 	if dataSource == "" {
 		return p, nil
 	}
+	var conn *sqlx.DB
+	for i := 1; i <= _maxTryConnect; i++ {
+		conn, err = sqlx.ConnectContext(ctx, "postgres", dataSource)
 
-	conn, err := sqlx.ConnectContext(ctx, "postgres", dataSource)
-	if err != nil {
-		return p, fmt.Errorf("%w sqlx connext", err)
+		if err, ok := err.(*pq.Error); ok && pgerrcode.IsConnectionException(err.Code.Name()) && i < _maxTryConnect {
+			time.Sleep(time.Second * time.Duration(i+i-1))
+			continue
+		}
+
+		if err != nil {
+			return p, fmt.Errorf("%w sqlx connect", err)
+		}
+		break
 	}
+
 	p.DB = conn
 	p.isInit = true
-	return p, err
+	return
 }
 
 func (p *Postgres) Ping() error {

@@ -29,7 +29,7 @@ func Run() {
 	l.Info("config server", zap.Object("config", serverConfig))
 	l.Info("config db", zap.Object("config", dbConfig))
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	var storage memstorage.Keeper

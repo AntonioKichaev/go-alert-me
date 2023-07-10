@@ -9,9 +9,13 @@ import (
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
+	"net"
 	"net/http"
 	"net/url"
+	"time"
 )
+
+const _maxTrySend = 3
 
 //go:generate mockery  --name DeliveryMan
 type DeliveryMan interface {
@@ -40,7 +44,7 @@ func (lm *lineMan) Delivery(data map[string]string) error {
 		request := lm.httpclient.R()
 		request.Method = lm.methodSend
 		request.URL = urlPath
-		response, err := request.Send()
+		response, err := lm.Send(request)
 		if err != nil {
 			return err
 		}
@@ -106,7 +110,7 @@ func (lm *lineMan) DeliveryMetricsJSON(mSlice []metricsEntity.Metrics) error {
 		request.SetBody(v)
 	}
 
-	response, err := request.Send()
+	response, err := lm.Send(request)
 	if err != nil {
 		return fmt.Errorf("send err %w", err)
 	}
@@ -116,6 +120,22 @@ func (lm *lineMan) DeliveryMetricsJSON(mSlice []metricsEntity.Metrics) error {
 		return err
 	}
 	return nil
+}
+func (lm *lineMan) Send(request *resty.Request) (response *resty.Response, err error) {
+	response = &resty.Response{}
+	for i := 1; i <= _maxTrySend; i++ {
+		response, err = request.Send()
+		if err, ok := err.(net.Error); ok && err.Timeout() && i < _maxTrySend {
+			time.Sleep(time.Second * time.Duration(i+i-1))
+			continue
+		}
+
+		if err != nil {
+			return
+		}
+		break
+	}
+	return
 }
 
 func NewLineMan(opts ...Option) (DeliveryMan, error) {
