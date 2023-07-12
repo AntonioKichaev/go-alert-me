@@ -25,12 +25,12 @@ func main() {
 	l.Info("config agent", zap.Object("agent", agentConfig))
 	deliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
 	if err != nil {
-		panic(err)
+		l.Fatal("main JoinPath", zap.Error(err))
 	}
 	deliveryAddressJSON, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValues)
 	zipper := mgzip.NewGZipper()
 	if err != nil {
-		panic(err)
+		l.Fatal("main NewGZipper", zap.Error(err))
 	}
 	ag := agent.NewAgentMetric(
 		agent.WithLogger(l),

@@ -37,13 +37,13 @@ func Run() {
 		db, err := postgres.New(ctx, dbConfig.DatabaseDNS)
 		defer func() { _ = db.Close() }()
 		if err != nil {
-			l.Error("init db: ", zap.Error(err))
+			l.Fatal("init db: ", zap.Error(err))
 		}
 
 		// create table
 		content, err := os.ReadFile("./internal/migrate/postgres/0001_init.sql")
 		if err != nil {
-			panic(err)
+			l.Fatal("main ReadFile", zap.Error(err))
 		}
 		_, err = db.Exec(string(content))
 

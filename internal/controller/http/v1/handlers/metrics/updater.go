@@ -119,20 +119,14 @@ func (h *UpdaterRoutes) UpdateMetricsBatchJSON(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	err = json.Unmarshal(body, &metricsRaw)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	metrics := make([]metricsEntity.Metrics, 0, len(metricsRaw))
-	for _, val := range metricsRaw {
-		err = val.IsValid()
-		if err != nil {
-			continue
-		}
-		metrics = append(metrics, val)
-	}
 
+	err = h.isMetricsValid(metricsRaw)
 	if err != nil {
 		if errors.Is(err, metricsEntity.ErrorName) {
 			w.WriteHeader(http.StatusNotFound)
@@ -149,8 +143,9 @@ func (h *UpdaterRoutes) UpdateMetricsBatchJSON(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if len(metrics) != 0 {
-		err = h.uc.UpdateMetricBatch(r.Context(), metrics)
+
+	if len(metricsRaw) != 0 {
+		err = h.uc.UpdateMetricBatch(r.Context(), metricsRaw)
 	}
 
 	if err != nil {
@@ -161,4 +156,15 @@ func (h *UpdaterRoutes) UpdateMetricsBatchJSON(w http.ResponseWriter, r *http.Re
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *UpdaterRoutes) isMetricsValid(metrics []metricsEntity.Metrics) error {
+	for _, val := range metrics {
+		val := val
+		err := val.IsValid()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

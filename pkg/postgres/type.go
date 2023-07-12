@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgerrcode"
 	"github.com/jmoiron/sqlx"
-	"github.com/lib/pq"
+	_ "github.com/lib/pq"
 	"time"
 )
 
@@ -17,28 +16,26 @@ type Postgres struct {
 	isInit bool
 }
 
-func New(ctx context.Context, dataSource string) (p *Postgres, err error) {
-	p = &Postgres{}
+func New(ctx context.Context, dataSource string) (pg *Postgres, err error) {
+	pg = &Postgres{}
 	if dataSource == "" {
-		return p, nil
+		return pg, errors.New("dataSource is empty")
 	}
 	var conn *sqlx.DB
 	for i := 1; i <= _maxTryConnect; i++ {
 		conn, err = sqlx.ConnectContext(ctx, "postgres", dataSource)
-
-		if err, ok := err.(*pq.Error); ok && pgerrcode.IsConnectionException(err.Code.Name()) && i < _maxTryConnect {
-			time.Sleep(time.Second * time.Duration(i+i-1))
-			continue
+		if err == nil {
+			break
 		}
-
-		if err != nil {
-			return p, fmt.Errorf("%w sqlx connect", err)
-		}
-		break
+		time.Sleep(time.Second * time.Duration(i+i-1))
 	}
 
-	p.DB = conn
-	p.isInit = true
+	if err != nil {
+		return pg, fmt.Errorf("%w sqlx connect", err)
+	}
+
+	pg.DB = conn
+	pg.isInit = true
 	return
 }
 
@@ -49,5 +46,8 @@ func (p *Postgres) Ping() error {
 	return p.DB.Ping()
 }
 func (p *Postgres) Close() error {
-	return p.DB.Close()
+	if p.DB != nil {
+		return p.DB.Close()
+	}
+	return nil
 }

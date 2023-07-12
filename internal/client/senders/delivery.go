@@ -94,6 +94,7 @@ func (lm *lineMan) DeliveryMetricsJSON(mSlice []metricsEntity.Metrics) error {
 	data, err := json.Marshal(mSlice)
 	if err != nil {
 		lm.logger.Error("can't Marshal", zap.Error(err))
+		return err
 	}
 	request := lm.httpclient.R()
 	request.Method = http.MethodPost
