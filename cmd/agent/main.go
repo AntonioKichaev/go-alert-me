@@ -11,7 +11,10 @@ import (
 	"net/url"
 )
 
-const _endPointUpdateValue = "/update/"
+const (
+	_endPointUpdateValue  = "/update/"
+	_endPointUpdateValues = "/updates/"
+)
 
 func main() {
 	agentConfig := config.NewAgentConfig()
@@ -21,15 +24,19 @@ func main() {
 	reportInterval := agentConfig.GetReportIntervalSecond()
 	l.Info("config agent", zap.Object("agent", agentConfig))
 	deliveryAddress, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValue)
+	if err != nil {
+		l.Fatal("main JoinPath", zap.Error(err))
+	}
+	deliveryAddressJSON, err := url.JoinPath(agentConfig.GetMyServer(), _endPointUpdateValues)
 	zipper := mgzip.NewGZipper()
 	if err != nil {
-		panic(err)
+		l.Fatal("main NewGZipper", zap.Error(err))
 	}
 	ag := agent.NewAgentMetric(
 		agent.WithLogger(l),
 		agent.SetName("anton"),
 		agent.SetZipper(zipper),
-		agent.InitDeliveryAddress(deliveryAddress, http.MethodPost),
+		agent.InitDeliveryAddress(deliveryAddress, deliveryAddressJSON, http.MethodPost),
 		agent.SetReportInterval(reportInterval),
 		agent.SetPollInterval(pollInterval),
 		agent.SetMetricsNumber(len(client.AllowGaugeMetric)),
