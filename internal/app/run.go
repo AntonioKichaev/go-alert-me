@@ -59,11 +59,9 @@ func Run() {
 	// we have postgres config we should create it
 	db, err := postgres.New(ctx, dbConfig.DatabaseDNS)
 	defer func() { _ = db.Close() }()
-	if err == nil {
-		if err != nil {
-			l.Fatal("init db: ", zap.Error(err))
-		}
-
+	if err != nil {
+		l.Error("init db: ", zap.Error(err))
+	} else {
 		// create table
 		content, err := os.ReadFile("./internal/migrate/postgres/0001_init.sql")
 		if err != nil {
