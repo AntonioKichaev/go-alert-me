@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
@@ -57,24 +56,7 @@ func (cnt *counterRepo) UpdateMetricCounterBatch(ctx context.Context, metrics []
 	return nil
 }
 func (cnt *counterRepo) AddCounter(ctx context.Context, counter *metrics2.Counter) (c *metrics2.Counter, err error) {
-	tx, err := cnt.db.BeginTxx(ctx, nil)
-	defer func() {
-		if err != nil {
-			if errRb := tx.Rollback(); errRb != nil {
-				err = fmt.Errorf("err rollback %w", err)
-				return
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
-
-	if err != sql.ErrNoRows && err != nil {
-		return nil, err
-	}
-
-	c, err = cnt.addCounter(ctx, tx, counter)
-
+	c, err = cnt.addCounter(ctx, counter)
 	return c, err
 }
 func (cnt *counterRepo) GetCounter(ctx context.Context, name string) (*metrics2.Counter, error) {
@@ -112,7 +94,7 @@ func (cnt *counterRepo) getCounters(ctx context.Context) (map[string]string, err
 	}
 	return mp, nil
 }
-func (cnt *counterRepo) addCounter(ctx context.Context, tx *sqlx.Tx, counter *metrics2.Counter) (*metrics2.Counter, error) {
+func (cnt *counterRepo) addCounter(ctx context.Context, counter *metrics2.Counter) (*metrics2.Counter, error) {
 	const fName = "postgres.addCounter"
 
 	sqlReq, args, err := cnt.builder.
@@ -125,7 +107,7 @@ func (cnt *counterRepo) addCounter(ctx context.Context, tx *sqlx.Tx, counter *me
 		return nil, fmt.Errorf("%s builder %w", fName, err)
 	}
 
-	result, err := tx.ExecContext(ctx, sqlReq, args...)
+	result, err := cnt.db.ExecContext(ctx, sqlReq, args...)
 	if err != nil {
 
 		return nil, fmt.Errorf("%s Exec %w", fName, err)

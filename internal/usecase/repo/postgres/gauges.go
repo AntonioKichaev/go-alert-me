@@ -19,16 +19,19 @@ type gaugeRepo struct {
 func (grp *gaugeRepo) UpdateMetricGaugeBatch(ctx context.Context, metrics []metrics2.Gauge) error {
 	const fName = "postgres.UpdateMetricCounterBatch"
 	tx, err := grp.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("%s BeginTxx %w", fName, err)
+	}
+
 	defer func() {
 		if err != nil {
 			if errRb := tx.Rollback(); errRb != nil {
 				err = fmt.Errorf("err rollback %w", err)
 				return
 			}
-			return
 		}
-		err = tx.Commit()
 	}()
+
 	insertBuilder := grp.builder.
 		Insert(_gaugeTable).
 		Columns("name", "value")
@@ -53,7 +56,7 @@ func (grp *gaugeRepo) UpdateMetricGaugeBatch(ctx context.Context, metrics []metr
 	if rows == 0 {
 		return fmt.Errorf("%s RowsAffected 0 %w", fName, err)
 	}
-	return nil
+	return tx.Commit()
 }
 func (grp *gaugeRepo) SetGauge(ctx context.Context, gauge *metrics2.Gauge) (g *metrics2.Gauge, err error) {
 	tx, err := grp.db.BeginTxx(ctx, nil)
@@ -65,9 +68,13 @@ func (grp *gaugeRepo) SetGauge(ctx context.Context, gauge *metrics2.Gauge) (g *m
 			}
 			return
 		}
-		err = tx.Commit()
+
 	}()
 	g, err = grp.setGauge(ctx, tx, gauge)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.Commit()
 	return g, err
 }
 func (grp *gaugeRepo) GetGauge(ctx context.Context, name string) (*metrics2.Gauge, error) {
