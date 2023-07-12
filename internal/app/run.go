@@ -8,7 +8,7 @@ import (
 	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	memstorage "github.com/antoniokichaev/go-alert-me/internal/usecase/repo"
-	postgres2 "github.com/antoniokichaev/go-alert-me/internal/usecase/repo/postgres"
+	postgresRepo "github.com/antoniokichaev/go-alert-me/internal/usecase/repo/postgres"
 	"github.com/antoniokichaev/go-alert-me/pkg/memorystorage"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/antoniokichaev/go-alert-me/pkg/postgres"
@@ -21,10 +21,12 @@ import (
 
 func Run() {
 
+	// setup config
 	serverConfig := configSrv.NewServerConfig()
 	dbConfig := configSrv.NewDBConfig()
 	configSrv.ParseFlagServer(serverConfig, dbConfig)
 
+	// setup logger
 	l := logger.Initialize("INFO")
 	l.Info("config server", zap.Object("config", serverConfig))
 	l.Info("config db", zap.Object("config", dbConfig))
@@ -32,10 +34,32 @@ func Run() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
+	//init storage memory as default
 	var storage memstorage.Keeper
-	if dbConfig.DatabaseDNS != "" {
-		db, err := postgres.New(ctx, dbConfig.DatabaseDNS)
-		defer func() { _ = db.Close() }()
+	storeCounter, err := memorystorage.NewMemoryStorage(
+		memorystorage.WithLogger(l),
+		memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
+		memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath),
+		memorystorage.WithRestore(serverConfig.Restore),
+	)
+	if err != nil {
+		l.Fatal("init storeCounter: ", zap.Error(err))
+	}
+	storeGauge, err := memorystorage.NewMemoryStorage(
+		memorystorage.WithLogger(l),
+		memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
+		memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath+".gauge"),
+		memorystorage.WithRestore(serverConfig.Restore),
+	)
+	if err != nil {
+		l.Fatal("init storeGauge: ", zap.Error(err))
+	}
+	storage = memstorage.NewMemStorage(storeCounter, storeGauge)
+
+	// we have postgres config we should create it
+	db, err := postgres.New(ctx, dbConfig.DatabaseDNS)
+	defer func() { _ = db.Close() }()
+	if err == nil {
 		if err != nil {
 			l.Fatal("init db: ", zap.Error(err))
 		}
@@ -48,32 +72,12 @@ func Run() {
 		_, err = db.Exec(string(content))
 
 		if err != nil {
-			panic(err)
+			l.Fatal("create tables", zap.Error(err))
 		}
-
-		storage = postgres2.New(db.DB)
-	} else {
-		storeCounter, err := memorystorage.NewMemoryStorage(
-			memorystorage.WithLogger(l),
-			memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
-			memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath),
-			memorystorage.WithRestore(serverConfig.Restore),
-		)
-		if err != nil {
-			l.Fatal("init storeCounter: ", zap.Error(err))
-		}
-		storeGauge, err := memorystorage.NewMemoryStorage(
-			memorystorage.WithLogger(l),
-			memorystorage.SetStoreIntervalSecond(serverConfig.StoreIntervalSecond),
-			memorystorage.SetPathToSaveLoad(serverConfig.FileStoragePath+".gauge"),
-			memorystorage.WithRestore(serverConfig.Restore),
-		)
-		if err != nil {
-			l.Fatal("init storeGauge: ", zap.Error(err))
-		}
-		storage = memstorage.NewMemStorage(storeCounter, storeGauge)
+		storage = postgresRepo.New(db.DB)
 	}
 
+	//create routing
 	router := chi.NewRouter()
 	router.Use(logger.LogMiddleware)
 	router.Use(mgzip.GzipMiddleware)
@@ -90,7 +94,7 @@ func Run() {
 		)
 	}
 
-	err := http.ListenAndServe(serverConfig.GetMyAddress(), router)
+	err = http.ListenAndServe(serverConfig.GetMyAddress(), router)
 	if err != nil {
 		l.Fatal("main: ", zap.String("err", fmt.Sprintf("%v", err)))
 	}

@@ -66,7 +66,6 @@ func (grp *gaugeRepo) SetGauge(ctx context.Context, gauge *metrics2.Gauge) (g *m
 				err = fmt.Errorf("err rollback %w", err)
 				return
 			}
-			return
 		}
 
 	}()

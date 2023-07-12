@@ -18,17 +18,7 @@ type counterRepo struct {
 
 func (cnt *counterRepo) UpdateMetricCounterBatch(ctx context.Context, metrics []metrics2.Counter) error {
 	const fName = "postgres.UpdateMetricCounterBatch"
-	tx, err := cnt.db.BeginTxx(ctx, nil)
-	defer func() {
-		if err != nil {
-			if errRb := tx.Rollback(); errRb != nil {
-				err = fmt.Errorf("err rollback %w", err)
-				return
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
+
 	insertBuilder := cnt.builder.
 		Insert(_countTable).
 		Columns("name", "value")
@@ -41,7 +31,7 @@ func (cnt *counterRepo) UpdateMetricCounterBatch(ctx context.Context, metrics []
 		return fmt.Errorf("%s builder %w", fName, err)
 	}
 
-	result, err := tx.ExecContext(ctx, sqlRes, args...)
+	result, err := cnt.db.ExecContext(ctx, sqlRes, args...)
 	if err != nil {
 		return fmt.Errorf("%s ExecContext %w", fName, err)
 	}
@@ -53,6 +43,7 @@ func (cnt *counterRepo) UpdateMetricCounterBatch(ctx context.Context, metrics []
 	if rows == 0 {
 		return fmt.Errorf("%s RowsAffected 0 %w", fName, err)
 	}
+
 	return nil
 }
 func (cnt *counterRepo) AddCounter(ctx context.Context, counter *metrics2.Counter) (c *metrics2.Counter, err error) {
