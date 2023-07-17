@@ -1,4 +1,4 @@
-package postgres
+package count
 
 import (
 	"context"
@@ -11,12 +11,12 @@ import (
 
 const _countTable = "counts"
 
-type counterRepo struct {
+type CounterRepo struct {
 	builder sq.StatementBuilderType
 	db      *sqlx.DB
 }
 
-func (cnt *counterRepo) UpdateMetricCounterBatch(ctx context.Context, metrics []metrics2.Counter) error {
+func (cnt *CounterRepo) UpdateMetricCounterBatch(ctx context.Context, metrics []metrics2.Counter) error {
 	const fName = "postgres.UpdateMetricCounterBatch"
 
 	insertBuilder := cnt.builder.
@@ -46,11 +46,11 @@ func (cnt *counterRepo) UpdateMetricCounterBatch(ctx context.Context, metrics []
 
 	return nil
 }
-func (cnt *counterRepo) AddCounter(ctx context.Context, counter *metrics2.Counter) (c *metrics2.Counter, err error) {
+func (cnt *CounterRepo) AddCounter(ctx context.Context, counter *metrics2.Counter) (c *metrics2.Counter, err error) {
 	c, err = cnt.addCounter(ctx, counter)
 	return c, err
 }
-func (cnt *counterRepo) GetCounter(ctx context.Context, name string) (*metrics2.Counter, error) {
+func (cnt *CounterRepo) GetCounter(ctx context.Context, name string) (*metrics2.Counter, error) {
 	const fName = "postgres.GetCounter"
 	sqlReq, args, err := cnt.builder.Select("sum(value)").From(_countTable).GroupBy("name").Where(sq.Eq{"name": name}).ToSql()
 
@@ -64,8 +64,8 @@ func (cnt *counterRepo) GetCounter(ctx context.Context, name string) (*metrics2.
 	}
 	return m, nil
 }
-func (cnt *counterRepo) getCounters(ctx context.Context) (map[string]string, error) {
-	const fName = "postgres.getCounters"
+func (cnt *CounterRepo) GetCounters(ctx context.Context) (map[string]string, error) {
+	const fName = "postgres.GetCounters"
 
 	sqlReq, args, err :=
 		cnt.builder.Select("name", "sum(value) as value").
@@ -85,7 +85,7 @@ func (cnt *counterRepo) getCounters(ctx context.Context) (map[string]string, err
 	}
 	return mp, nil
 }
-func (cnt *counterRepo) addCounter(ctx context.Context, counter *metrics2.Counter) (*metrics2.Counter, error) {
+func (cnt *CounterRepo) addCounter(ctx context.Context, counter *metrics2.Counter) (*metrics2.Counter, error) {
 	const fName = "postgres.addCounter"
 
 	sqlReq, args, err := cnt.builder.
@@ -113,4 +113,11 @@ func (cnt *counterRepo) addCounter(ctx context.Context, counter *metrics2.Counte
 		return nil, fmt.Errorf("%s RowsAffected %w", fName, err)
 	}
 	return counter, err
+}
+
+func New(db *sqlx.DB) *CounterRepo {
+	return &CounterRepo{
+		builder: sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		db:      db,
+	}
 }

@@ -1,4 +1,4 @@
-package postgres
+package gauge
 
 import (
 	"context"
@@ -11,12 +11,12 @@ import (
 
 const _gaugeTable = "gauges"
 
-type gaugeRepo struct {
+type GaugeRepo struct {
 	builder sq.StatementBuilderType
 	db      *sqlx.DB
 }
 
-func (grp *gaugeRepo) UpdateMetricGaugeBatch(ctx context.Context, metrics []metrics2.Gauge) error {
+func (grp *GaugeRepo) UpdateMetricGaugeBatch(ctx context.Context, metrics []metrics2.Gauge) error {
 	const fName = "postgres.UpdateMetricCounterBatch"
 	tx, err := grp.db.BeginTxx(ctx, nil)
 	if err != nil {
@@ -58,7 +58,7 @@ func (grp *gaugeRepo) UpdateMetricGaugeBatch(ctx context.Context, metrics []metr
 	}
 	return tx.Commit()
 }
-func (grp *gaugeRepo) SetGauge(ctx context.Context, gauge *metrics2.Gauge) (g *metrics2.Gauge, err error) {
+func (grp *GaugeRepo) SetGauge(ctx context.Context, gauge *metrics2.Gauge) (g *metrics2.Gauge, err error) {
 	tx, err := grp.db.BeginTxx(ctx, nil)
 	defer func() {
 		if err != nil {
@@ -76,7 +76,7 @@ func (grp *gaugeRepo) SetGauge(ctx context.Context, gauge *metrics2.Gauge) (g *m
 	err = tx.Commit()
 	return g, err
 }
-func (grp *gaugeRepo) GetGauge(ctx context.Context, name string) (*metrics2.Gauge, error) {
+func (grp *GaugeRepo) GetGauge(ctx context.Context, name string) (*metrics2.Gauge, error) {
 	const fName = "postgres.GetGauge"
 	sqlReq, args, err := grp.builder.Select("value").From(_gaugeTable).Where(sq.Eq{"name": name}).ToSql()
 
@@ -91,8 +91,8 @@ func (grp *gaugeRepo) GetGauge(ctx context.Context, name string) (*metrics2.Gaug
 	}
 	return m, nil
 }
-func (grp *gaugeRepo) getGauges(ctx context.Context) (map[string]string, error) {
-	const fName = "postgres.getGauges"
+func (grp *GaugeRepo) GetGauges(ctx context.Context) (map[string]string, error) {
+	const fName = "postgres.GetGauges"
 
 	sqlReq, args, err :=
 		grp.builder.Select("name", "value").From(_gaugeTable).ToSql()
@@ -110,7 +110,7 @@ func (grp *gaugeRepo) getGauges(ctx context.Context) (map[string]string, error) 
 	}
 	return mp, nil
 }
-func (grp *gaugeRepo) setGauge(ctx context.Context, tx *sqlx.Tx, gauge *metrics2.Gauge) (*metrics2.Gauge, error) {
+func (grp *GaugeRepo) setGauge(ctx context.Context, tx *sqlx.Tx, gauge *metrics2.Gauge) (*metrics2.Gauge, error) {
 	const fName = "postgres.setGauge"
 
 	sqlReq, args, err := grp.builder.
@@ -139,4 +139,11 @@ func (grp *gaugeRepo) setGauge(ctx context.Context, tx *sqlx.Tx, gauge *metrics2
 		return nil, fmt.Errorf("%s RowsAffected %w", fName, err)
 	}
 	return gauge, err
+}
+
+func New(db *sqlx.DB) *GaugeRepo {
+	return &GaugeRepo{
+		builder: sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		db:      db,
+	}
 }
