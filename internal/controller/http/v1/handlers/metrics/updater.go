@@ -146,13 +146,12 @@ func (h *UpdaterRoutes) UpdateMetricsBatchJSON(w http.ResponseWriter, r *http.Re
 
 	if len(metricsRaw) != 0 {
 		err = h.uc.UpdateMetricBatch(r.Context(), metricsRaw)
-	}
-
 	if err != nil {
 		w.Header().Set("Content-Type", _contentTypeJSON)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(fmt.Sprintf(`{"err": "%s"}`, err)))
 		return
+	}
 	}
 
 	w.WriteHeader(http.StatusOK)
