@@ -35,7 +35,7 @@ func (h *UpdaterRoutes) updateMetrics(ctx *gin.Context) {
 	metricName := ctx.Param(_metricName)
 	metricValue := ctx.Param(_metricValue)
 
-	_, err := h.uc.UpdateMetricByParams(metricName, metricType, metricValue)
+	_, err := h.uc.UpdateMetricByParams(ctx.Request.Context(), metricName, metricType, metricValue)
 	if err != nil {
 		if errors.Is(err, metrics2.ErrorName) {
 			ctx.AbortWithStatus(_zeroMetricName)

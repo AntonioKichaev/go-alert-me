@@ -1,6 +1,7 @@
 package memstorage
 
 import (
+	"context"
 	"errors"
 	metrics2 "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
@@ -12,11 +13,31 @@ import (
 type Keeper interface {
 	usecase.UpdaterRepo
 	usecase.ReceiverMetricRepo
+	Ping() error
 }
 
 type MemStorage struct {
 	storeCounter *memorystorage.MemoryStorage
 	storeGauge   *memorystorage.MemoryStorage
+}
+
+func (m *MemStorage) UpdateMetricCounterBatch(ctx context.Context, metrics []metrics2.Counter) error {
+	for _, counter := range metrics {
+		_, err := m.AddCounter(ctx, &counter)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (m *MemStorage) UpdateMetricGaugeBatch(ctx context.Context, metrics []metrics2.Gauge) error {
+	for _, gauge := range metrics {
+		_, err := m.SetGauge(ctx, &gauge)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func NewMemStorage(storeCounter, storeGauge *memorystorage.MemoryStorage) Keeper {
@@ -29,7 +50,7 @@ func newMemStorage(storeCounter, storeGauge *memorystorage.MemoryStorage) *MemSt
 	}
 }
 
-func (m *MemStorage) GetCounter(name string) (*metrics2.Counter, error) {
+func (m *MemStorage) GetCounter(ctx context.Context, name string) (*metrics2.Counter, error) {
 	if val, err := m.storeCounter.Get(name); err != nil {
 		return nil, err
 	} else {
@@ -37,7 +58,7 @@ func (m *MemStorage) GetCounter(name string) (*metrics2.Counter, error) {
 	}
 }
 
-func (m *MemStorage) GetGauge(name string) (*metrics2.Gauge, error) {
+func (m *MemStorage) GetGauge(ctx context.Context, name string) (*metrics2.Gauge, error) {
 	if val, err := m.storeGauge.Get(name); err != nil {
 		return nil, err
 	} else {
@@ -45,8 +66,8 @@ func (m *MemStorage) GetGauge(name string) (*metrics2.Gauge, error) {
 	}
 }
 
-func (m *MemStorage) AddCounter(counter *metrics2.Counter) (*metrics2.Counter, error) {
-	old, err := m.GetCounter(counter.GetName())
+func (m *MemStorage) AddCounter(ctx context.Context, counter *metrics2.Counter) (*metrics2.Counter, error) {
+	old, err := m.GetCounter(ctx, counter.GetName())
 	if errors.Is(err, memorystorage.ErrorNotExistMetric) {
 		old, _ = metrics2.NewCounter(counter.GetName(), 0)
 
@@ -58,12 +79,12 @@ func (m *MemStorage) AddCounter(counter *metrics2.Counter) (*metrics2.Counter, e
 	return counter, err
 
 }
-func (m *MemStorage) SetGauge(gauge *metrics2.Gauge) (*metrics2.Gauge, error) {
+func (m *MemStorage) SetGauge(ctx context.Context, gauge *metrics2.Gauge) (*metrics2.Gauge, error) {
 	err := m.storeGauge.Set(gauge.GetName(), strconv.FormatFloat(gauge.GetValue(), 'f', -1, 64))
 	return gauge, err
 }
 
-func (m *MemStorage) GetMetrics() (map[string]string, error) {
+func (m *MemStorage) GetMetrics(ctx context.Context) (map[string]string, error) {
 	g := m.storeGauge.GetDump()
 	c := m.storeCounter.GetDump()
 	result := make(map[string]string, len(g)+len(c))
@@ -74,4 +95,7 @@ func (m *MemStorage) GetMetrics() (map[string]string, error) {
 		result[key] = val
 	}
 	return result, nil
+}
+func (m *MemStorage) Ping() error {
+	return errors.New("doesn't impliment")
 }

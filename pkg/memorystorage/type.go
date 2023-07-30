@@ -90,6 +90,7 @@ func (m *MemoryStorage) LoadFromDisk() error {
 
 func (m *MemoryStorage) saveOnDisk() {
 	f, _ := os.OpenFile(m.pathToSaveLoad, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	defer f.Close()
 	enc := json.NewEncoder(f)
 	m.mu.RLock()
 	defer m.mu.RUnlock()

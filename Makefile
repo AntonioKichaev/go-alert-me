@@ -7,6 +7,7 @@ SERVER_PORT=8080
 ADDRESS="localhost:$(SERVER_PORT)"
 LOGGING_LEVEL="FATAL"
 TEMP_FILE=./cmd/server/tmp.json
+DATABASE_DSN="postgres://anton:!anton321@localhost:5444/metrics?sslmode=disable"
 prepare:
 	go mod tidy
 
@@ -75,4 +76,43 @@ iter9: build_server build_client
 				-server-port=$(SERVER_PORT) \
 				-file-storage-path=${TEMP_FILE} \
 				-source-path=.
-all: iter1 iter2 iter3 iter4 iter5 iter6 iter7 iter8 iter9
+
+iter10: build_server build_client
+	metricstest -test.v -test.run=^TestIteration10[AB]$$ \
+            -agent-binary-path=$(AGENT_PATH) \
+            -binary-path=$(SERVER_PATH) \
+            -database-dsn=$(DATABASE_DSN) \
+           -server-port=$(SERVER_PORT) \
+            -source-path=.
+
+
+iter11: build_server build_client
+	metricstest -test.v -test.run=^TestIteration11$$ \
+			-agent-binary-path=$(AGENT_PATH) \
+			-binary-path=$(SERVER_PATH) \
+            -database-dsn=$(DATABASE_DSN) \
+		    -server-port=$(SERVER_PORT) \
+		    -source-path=.
+
+
+
+iter12: build_server build_client
+	metricstest -test.v -test.run=^TestIteration12$$ \
+			-agent-binary-path=$(AGENT_PATH) \
+			-binary-path=$(SERVER_PATH) \
+            -database-dsn=$(DATABASE_DSN) \
+		    -server-port=$(SERVER_PORT) \
+		    -source-path=.
+
+iter13: build_server build_client
+	 metricstest -test.v -test.run=^TestIteration13$$ \
+		    -agent-binary-path=$(AGENT_PATH) \
+			-binary-path=$(SERVER_PATH) \
+		    -database-dsn=$(DATABASE_DSN) \
+			-server-port=$(SERVER_PORT) \
+			-source-path=.
+
+
+all: iter1 iter2 iter3 iter4 iter5 \
+	iter6 iter7 iter8 iter9 iter10 \
+	iter11 iter12 iter13

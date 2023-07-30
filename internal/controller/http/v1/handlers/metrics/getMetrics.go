@@ -25,7 +25,7 @@ func (h *HadlerReciever) GetMetricByName(w http.ResponseWriter, r *http.Request)
 	metricType := chi.URLParam(r, MetricType)
 	metricName := chi.URLParam(r, MetricName)
 	result := ""
-	metric, err := h.uc.GetMetricByName(metricName, metricType)
+	metric, err := h.uc.GetMetricByName(r.Context(), metricName, metricType)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -57,7 +57,7 @@ func (h *HadlerReciever) GetMetricByNameJSON(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	m, err = h.uc.GetMetricByName(m.ID, m.MType)
+	m, err = h.uc.GetMetricByName(r.Context(), m.ID, m.MType)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -73,7 +73,7 @@ func (h *HadlerReciever) GetMetricByNameJSON(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *HadlerReciever) GetMetrics(w http.ResponseWriter, r *http.Request) {
-	metrics, err := h.uc.GetMetrics()
+	metrics, err := h.uc.GetMetrics(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
