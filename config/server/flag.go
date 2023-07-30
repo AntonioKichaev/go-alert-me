@@ -13,6 +13,7 @@ func ParseFlagServer(srv *Server, config *DBConfig) {
 	flag.StringVar(&srv.FileStoragePath, "f", "/tmp/metrics-db.json", "if nothing without save")
 	flag.BoolVar(&srv.Restore, "r", true, "restore data from fileStoragePath")
 	flag.StringVar(&config.DatabaseDNS, "d", "", "DNS address to connect database")
+	flag.StringVar(&srv.SecretKey, "k", "", "Secret key for sign data")
 	flag.Parse()
 	err := env.Parse(srv)
 	if err != nil {

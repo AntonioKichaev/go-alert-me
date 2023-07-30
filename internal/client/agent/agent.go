@@ -23,7 +23,9 @@ const (
 type Agent interface {
 	Run()
 }
-
+type Hasher interface {
+	Sign(data []byte) string
+}
 type agentBond struct {
 	pollInterval   time.Duration
 	reportInterval time.Duration
@@ -36,6 +38,7 @@ type agentBond struct {
 	zipper         mgzip.Zipper
 	mu             sync.RWMutex
 	logger         *zap.Logger
+	hahser         Hasher
 }
 
 func NewAgentMetric(opts ...Option) Agent {

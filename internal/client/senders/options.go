@@ -43,3 +43,9 @@ func SetLogger(log *zap.Logger) Option {
 		l.logger = log
 	}
 }
+
+func SetHasher(h Hasher) Option {
+	return func(l *lineMan) {
+		l.hash = h
+	}
+}

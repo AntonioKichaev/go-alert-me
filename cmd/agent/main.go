@@ -36,6 +36,7 @@ func main() {
 		agent.WithLogger(l),
 		agent.SetName("anton"),
 		agent.SetZipper(zipper),
+		agent.SetHasher(agentConfig.SecretKey),
 		agent.InitDeliveryAddress(deliveryAddress, deliveryAddressJSON, http.MethodPost),
 		agent.SetReportInterval(reportInterval),
 		agent.SetPollInterval(pollInterval),

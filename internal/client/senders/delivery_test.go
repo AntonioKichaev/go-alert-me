@@ -71,7 +71,6 @@ func TestLineMan_Delivery(t *testing.T) {
 				data: map[string]string{"ram": "test"},
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrorStatusCode, i...)
 				return false
 			},
 		},

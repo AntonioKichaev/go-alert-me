@@ -42,7 +42,8 @@ func InitDeliveryAddress(endpointRawData, endpointJSONData, method string) Optio
 			senders.SetMethodSend(method),
 			senders.SetZipper(agent.zipper),
 			senders.SetLogger(agent.logger),
-		) //todo: чо-то с ошибкой делать
+			senders.SetHasher(agent.hahser),
+		)
 		if err != nil {
 			panic(fmt.Errorf("InitDeliveryAddress:%w", err))
 		}
@@ -69,6 +70,16 @@ func SetGrabber() Option {
 func SetZipper(zipper mgzip.Zipper) Option {
 	return func(agent *agentBond) {
 		agent.zipper = zipper
+
+	}
+}
+
+func SetHasher(key string) Option {
+	return func(agent *agentBond) {
+		h := hasher.NewHasher(key)
+		if h != nil {
+			agent.hahser = h
+		}
 
 	}
 }

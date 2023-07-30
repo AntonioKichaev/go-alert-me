@@ -14,6 +14,7 @@ func ParseFlag(ag *Agent) {
 	flag.Int64Var(&ag.ReportIntervalSecond, "r", 10, " agent will send report to server in seconds")
 	flag.Int64Var(&ag.PollIntervalSecond, "p", 2, "agent will grab data from machine")
 	flag.StringVar(&ag.LoggingLevel, "l", "INFO", "agent log level")
+	flag.StringVar(&ag.SecretKey, "k", "", "Secret key for sign data")
 	flag.Parse()
 	err := env.Parse(ag)
 	if err != nil {

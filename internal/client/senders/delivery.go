@@ -3,7 +3,6 @@ package senders
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	metricsEntity "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
@@ -31,9 +30,8 @@ type lineMan struct {
 	methodSend       string
 	zipper           mgzip.Zipper
 	logger           *zap.Logger
+	hash             Hasher
 }
-
-var ErrorStatusCode = errors.New("delivery status code")
 
 func (lm *lineMan) Delivery(data map[string]string) error {
 	for metricType, value := range data {
@@ -44,12 +42,9 @@ func (lm *lineMan) Delivery(data map[string]string) error {
 		request := lm.httpclient.R()
 		request.Method = lm.methodSend
 		request.URL = urlPath
-		response, err := lm.Send(request)
+		_, err = lm.Send(request)
 		if err != nil {
 			return err
-		}
-		if response.StatusCode() != http.StatusOK {
-			return fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
 		}
 
 	}
@@ -75,14 +70,13 @@ func (lm *lineMan) DeliveryBody(mData [][]byte) error {
 			request.SetHeader("Content-Encoding", lm.zipper.GetEncoding())
 			buf.Write(v)
 		}
-		request.SetBody(buf.Bytes())
-		response, err := request.Send()
-		if err != nil {
-			return err
+		if lm.hash != nil {
+			sign := lm.hash.Sign(buf.Bytes())
+			request.SetHeader("HashSHA256", sign)
 		}
-		if response.StatusCode() != http.StatusOK {
-			err = fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
-			lm.logger.Error("DeliveryBody() statusCode: ", zap.Error(err))
+		request.SetBody(buf.Bytes())
+		_, err := request.Send()
+		if err != nil {
 			return err
 		}
 
@@ -101,6 +95,7 @@ func (lm *lineMan) DeliveryMetricsJSON(mSlice []metricsEntity.Metrics) error {
 	request.URL = lm.endpointJSONData
 	request.SetHeader("Content-Type", "application/json")
 
+	var buf bytes.Buffer
 	if lm.zipper != nil {
 		v, err := lm.zipper.Compress(data)
 		if err != nil {
@@ -108,18 +103,19 @@ func (lm *lineMan) DeliveryMetricsJSON(mSlice []metricsEntity.Metrics) error {
 			return err
 		}
 		request.SetHeader("Content-Encoding", lm.zipper.GetEncoding())
-		request.SetBody(v)
+		buf.Write(v)
+		request.SetBody(buf.Bytes())
+	}
+	if lm.hash != nil {
+		sign := lm.hash.Sign(buf.Bytes())
+		request.SetHeader("HashSHA256", sign)
 	}
 
-	response, err := lm.Send(request)
+	_, err = lm.Send(request)
 	if err != nil {
 		return fmt.Errorf("send err %w", err)
 	}
-	if response.StatusCode() != http.StatusOK {
-		err = fmt.Errorf("%w (%d)!=200", ErrorStatusCode, response.StatusCode())
-		lm.logger.Error("DeliveryMetricsJSON statusCode: ", zap.Error(err))
-		return err
-	}
+
 	return nil
 }
 func (lm *lineMan) Send(request *resty.Request) (response *resty.Response, err error) {

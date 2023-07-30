@@ -12,6 +12,7 @@ type Agent struct {
 	ReportIntervalSecond int64  `env:"REPORT_INTERVAL"`
 	PollIntervalSecond   int64  `env:"POLL_INTERVAL"`
 	LoggingLevel         string `env:"LOGGING_LEVEL"`
+	SecretKey            string `env:"KEY"`
 }
 
 func (a *Agent) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
@@ -19,6 +20,7 @@ func (a *Agent) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
 	encoder.AddInt64("ReportIntervalSecond", a.ReportIntervalSecond)
 	encoder.AddInt64("PollIntervalSecond", a.PollIntervalSecond)
 	encoder.AddString("LOGGING_LEVEL", a.LoggingLevel)
+	encoder.AddString("SecretKey", a.SecretKey)
 	return nil
 }
 
