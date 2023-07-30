@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers"
 	"github.com/antoniokichaev/go-alert-me/internal/client/senders"
+	"github.com/antoniokichaev/go-alert-me/pkg/hasher"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"go.uber.org/zap"
 	"time"
