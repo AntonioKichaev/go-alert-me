@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+
 	"github.com/caarlos0/env/v8"
 )
 
@@ -13,8 +14,9 @@ func ParseFlag(ag *Agent) {
 	flag.StringVar(&ag.HTTPServerAdr, "a", "localhost:8080", "where agent wil send request")
 	flag.Int64Var(&ag.ReportIntervalSecond, "r", 10, " agent will send report to server in seconds")
 	flag.Int64Var(&ag.PollIntervalSecond, "p", 2, "agent will grab data from machine")
-	flag.StringVar(&ag.LoggingLevel, "l", "INFO", "agent log level")
+	flag.StringVar(&ag.LoggingLevel, "ll", "INFO", "agent log level")
 	flag.StringVar(&ag.SecretKey, "k", "", "Secret key for sign data")
+	flag.IntVar(&ag.RateLimit, "l", 1, "Rate limit for request to server")
 	flag.Parse()
 	err := env.Parse(ag)
 	if err != nil {

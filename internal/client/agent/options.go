@@ -2,12 +2,14 @@ package agent
 
 import (
 	"fmt"
+	"time"
+
+	"go.uber.org/zap"
+
 	"github.com/antoniokichaev/go-alert-me/internal/client/grabbers"
 	"github.com/antoniokichaev/go-alert-me/internal/client/senders"
 	"github.com/antoniokichaev/go-alert-me/pkg/hasher"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
-	"go.uber.org/zap"
-	"time"
 )
 
 type Option func(agent *agentBond)
@@ -35,7 +37,7 @@ func SetName(name string) Option {
 
 	}
 }
-func InitDeliveryAddress(endpointRawData, endpointJSONData, method string) Option {
+func InitDeliveryAddress(endpointRawData, endpointJSONData, method string, maxWorker int) Option {
 	return func(agent *agentBond) {
 		delivery, err := senders.NewLineMan(
 			senders.SetEndpointJSONData(endpointJSONData),
@@ -44,6 +46,7 @@ func InitDeliveryAddress(endpointRawData, endpointJSONData, method string) Optio
 			senders.SetZipper(agent.zipper),
 			senders.SetLogger(agent.logger),
 			senders.SetHasher(agent.hahser),
+			senders.SetWorkerPool(maxWorker),
 		)
 		if err != nil {
 			panic(fmt.Errorf("InitDeliveryAddress:%w", err))

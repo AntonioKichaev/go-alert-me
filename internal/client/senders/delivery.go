@@ -3,15 +3,16 @@ package senders
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	metricsEntity "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
-	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
-	"github.com/go-resty/resty/v2"
-	"go.uber.org/zap"
 	"net"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	"go.uber.org/zap"
+
+	metricsEntity "github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
+	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 )
 
 const _maxTrySend = 3
@@ -31,6 +32,8 @@ type lineMan struct {
 	zipper           mgzip.Zipper
 	logger           *zap.Logger
 	hash             Hasher
+	maxWorkerPool    int
+	jobs             chan resty.Request
 }
 
 func (lm *lineMan) Delivery(data map[string]string) error {
@@ -42,11 +45,7 @@ func (lm *lineMan) Delivery(data map[string]string) error {
 		request := lm.httpclient.R()
 		request.Method = lm.methodSend
 		request.URL = urlPath
-		_, err = lm.Send(request)
-		if err != nil {
-			return err
-		}
-
+		lm.AddRequest(request)
 	}
 	return nil
 }
@@ -75,10 +74,8 @@ func (lm *lineMan) DeliveryBody(mData [][]byte) error {
 			request.SetHeader("HashSHA256", sign)
 		}
 		request.SetBody(buf.Bytes())
-		_, err := request.Send()
-		if err != nil {
-			return err
-		}
+
+		lm.AddRequest(request)
 
 	}
 	return nil
@@ -111,39 +108,63 @@ func (lm *lineMan) DeliveryMetricsJSON(mSlice []metricsEntity.Metrics) error {
 		request.SetHeader("HashSHA256", sign)
 	}
 
-	_, err = lm.Send(request)
-	if err != nil {
-		return fmt.Errorf("send err %w", err)
-	}
+	lm.AddRequest(request)
 
 	return nil
 }
-func (lm *lineMan) Send(request *resty.Request) (response *resty.Response, err error) {
-	response = &resty.Response{}
+
+func (lm *lineMan) AddRequest(request *resty.Request) {
+	lm.jobs <- *request
+}
+func (lm *lineMan) Send(request *resty.Request) *resty.Response {
+	response := &resty.Response{}
 	for i := 1; i <= _maxTrySend; i++ {
-		response, err = request.Send()
+		response, err := request.Send()
 		if err, ok := err.(net.Error); ok && err.Timeout() && i < _maxTrySend {
 			time.Sleep(time.Second * time.Duration(i+i-1))
 			continue
 		}
 
 		if err != nil {
-			return
+			lm.logger.Error("error send err", zap.Error(err))
+			return response
 		}
 		break
 	}
-	return
+	return response
 }
 
 func NewLineMan(opts ...Option) (DeliveryMan, error) {
 	l := &lineMan{
-		httpclient: resty.New(),
-		zipper:     mgzip.NewGZipper(),
+		httpclient:    resty.New(),
+		zipper:        mgzip.NewGZipper(),
+		maxWorkerPool: 3,
 	}
 
 	for _, opt := range opts {
 		opt(l)
 	}
+	jobs := l.CreateWorkerPool(l.maxWorkerPool)
+	l.jobs = jobs
 
 	return l, nil
+}
+
+func (lm *lineMan) worker(jobs <-chan resty.Request) {
+	for {
+		req := <-jobs
+		lm.Send(&req)
+
+	}
+}
+
+func (lm *lineMan) CreateWorkerPool(nWorkerCount int) chan resty.Request {
+	jobs := make(chan resty.Request, nWorkerCount)
+
+	for i := 0; nWorkerCount > i; i++ {
+		lm.logger.Info("Create worker", zap.Int("current worker", i))
+		go lm.worker(jobs)
+	}
+
+	return jobs
 }
