@@ -24,6 +24,10 @@ type DeliveryMan interface {
 	DeliveryMetricsJSON([]metricsEntity.Metrics) error
 }
 
+type Hasher interface {
+	Sign(data []byte) string
+}
+
 type lineMan struct {
 	endpointRawData  string
 	endpointJSONData string
