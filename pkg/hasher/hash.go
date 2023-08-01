@@ -37,7 +37,9 @@ func (h *Hasher) Sign(data []byte) string {
 	h.h.Reset()
 	h.h.Write(data)
 	_, err := h.enc.Write(h.h.Sum(nil))
-	logger.GetLogger().Error("hasher.Sign() err", zap.Error(err))
+	if err != nil {
+		logger.GetLogger().Error("hasher.Sign() err", zap.Error(err))
+	}
 	h.enc.Close()
 	sign := h.b.String()
 	h.b.Reset()
