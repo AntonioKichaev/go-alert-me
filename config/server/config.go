@@ -11,11 +11,16 @@ type Server struct {
 	StoreIntervalSecond int    `env:"STORE_INTERVAL"`
 	FileStoragePath     string `env:"FILE_STORAGE_PATH"`
 	Restore             bool   `env:"RESTORE"`
+	SecretKey           string `env:"KEY"`
 }
 
 func (srv *Server) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
 	encoder.AddString("HTTPServerAdr", srv.HTTPServerAdr)
 	encoder.AddString("LoggingLevel", srv.LoggingLevel)
+	encoder.AddInt("StoreIntervalSecond", srv.StoreIntervalSecond)
+	encoder.AddString("FileStoragePath", srv.FileStoragePath)
+	encoder.AddBool("Restore", srv.Restore)
+	encoder.AddString("SecretKey", srv.SecretKey)
 	return nil
 }
 

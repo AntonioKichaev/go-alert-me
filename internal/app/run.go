@@ -9,6 +9,7 @@ import (
 	"github.com/antoniokichaev/go-alert-me/internal/usecase"
 	memstorage "github.com/antoniokichaev/go-alert-me/internal/usecase/repo"
 	postgresRepo "github.com/antoniokichaev/go-alert-me/internal/usecase/repo/postgres"
+	"github.com/antoniokichaev/go-alert-me/pkg/hasher"
 	"github.com/antoniokichaev/go-alert-me/pkg/memorystorage"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/antoniokichaev/go-alert-me/pkg/postgres"
@@ -78,6 +79,7 @@ func Run() {
 	//create routing
 	router := chi.NewRouter()
 	router.Use(logger.LogMiddleware)
+	router.Use(hasher.HasherMiddleware(serverConfig.SecretKey))
 	router.Use(mgzip.GzipMiddleware)
 
 	{

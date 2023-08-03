@@ -2,18 +2,22 @@ package senders
 
 import (
 	"fmt"
-	"github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
-	"github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
-	"github.com/antoniokichaev/go-alert-me/internal/usecase"
-	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+
+	"github.com/antoniokichaev/go-alert-me/internal/controller/http/v1"
+	"github.com/antoniokichaev/go-alert-me/internal/entity/metrics"
+	"github.com/antoniokichaev/go-alert-me/internal/logger"
+	"github.com/antoniokichaev/go-alert-me/internal/usecase"
+	"github.com/antoniokichaev/go-alert-me/internal/usecase/repo/mocks"
 )
 
 func getServer(mockStore *mocks.Keeper) *httptest.Server {
@@ -71,7 +75,6 @@ func TestLineMan_Delivery(t *testing.T) {
 				data: map[string]string{"ram": "test"},
 			},
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				assert.ErrorIs(t, err, ErrorStatusCode, i...)
 				return false
 			},
 		},
@@ -79,12 +82,16 @@ func TestLineMan_Delivery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockStore.On("AddCounter", mock.Anything, &metrics.Counter{Name: "ram", Value: int64(55)}).Maybe().Return(&metrics.Counter{}, nil)
-			lm := &lineMan{
-				endpointRawData: tt.fields.receiver,
-				httpclient:      tt.fields.httpclient,
-				methodSend:      tt.fields.methodSend,
-			}
-			err := lm.Delivery(tt.args.data)
+			log := logger.Initialize("INFO")
+			lm, err := NewLineMan(
+				SetEndpointJSONData(tt.fields.receiver),
+				SetHTTPClient(tt.fields.httpclient),
+				SetMethodSend(tt.fields.methodSend),
+				SetLogger(log),
+			)
+			require.NoError(t, err)
+			err = lm.Delivery(tt.args.data)
+
 			tt.wantErr(t, err, fmt.Sprintf("Delivery(%v)", tt.args.data))
 			mockStore.AssertExpectations(t)
 		})

@@ -1,14 +1,16 @@
 package main
 
 import (
+	"net/http"
+	"net/url"
+
+	"go.uber.org/zap"
+
 	"github.com/antoniokichaev/go-alert-me/config/agent"
 	"github.com/antoniokichaev/go-alert-me/internal/client"
 	"github.com/antoniokichaev/go-alert-me/internal/client/agent"
 	"github.com/antoniokichaev/go-alert-me/internal/logger"
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
-	"go.uber.org/zap"
-	"net/http"
-	"net/url"
 )
 
 const (
@@ -36,7 +38,8 @@ func main() {
 		agent.WithLogger(l),
 		agent.SetName("anton"),
 		agent.SetZipper(zipper),
-		agent.InitDeliveryAddress(deliveryAddress, deliveryAddressJSON, http.MethodPost),
+		agent.SetHasher(agentConfig.SecretKey),
+		agent.InitDeliveryAddress(deliveryAddress, deliveryAddressJSON, http.MethodPost, agentConfig.RateLimit),
 		agent.SetReportInterval(reportInterval),
 		agent.SetPollInterval(pollInterval),
 		agent.SetMetricsNumber(len(client.AllowGaugeMetric)),

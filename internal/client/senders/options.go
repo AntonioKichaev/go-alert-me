@@ -1,9 +1,10 @@
 package senders
 
 import (
-	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
+
+	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 )
 
 type Option func(l *lineMan)
@@ -20,7 +21,7 @@ func SetEndpointJSONData(endpoint string) Option {
 	}
 }
 
-func SeHTTPClient(client *resty.Client) Option {
+func SetHTTPClient(client *resty.Client) Option {
 	return func(l *lineMan) {
 		l.httpclient = client
 	}
@@ -41,5 +42,17 @@ func SetZipper(zipper mgzip.Zipper) Option {
 func SetLogger(log *zap.Logger) Option {
 	return func(l *lineMan) {
 		l.logger = log
+	}
+}
+
+func SetHasher(h Hasher) Option {
+	return func(l *lineMan) {
+		l.hash = h
+	}
+}
+
+func SetWorkerPool(nWorker int) Option {
+	return func(l *lineMan) {
+		l.maxWorkerPool = nWorker
 	}
 }
