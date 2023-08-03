@@ -15,7 +15,10 @@ import (
 	"github.com/antoniokichaev/go-alert-me/pkg/mgzip"
 )
 
-const _maxTrySend = 3
+const (
+	_maxTrySend = 3
+	_shaHeader  = "HashSHA256"
+)
 
 //go:generate mockery  --name DeliveryMan
 type DeliveryMan interface {
@@ -75,7 +78,7 @@ func (lm *lineMan) DeliveryBody(mData [][]byte) error {
 		}
 		if lm.hash != nil {
 			sign := lm.hash.Sign(buf.Bytes())
-			request.SetHeader("HashSHA256", sign)
+			request.SetHeader(_shaHeader, sign)
 		}
 		request.SetBody(buf.Bytes())
 
@@ -109,7 +112,7 @@ func (lm *lineMan) DeliveryMetricsJSON(mSlice []metricsEntity.Metrics) error {
 	}
 	if lm.hash != nil {
 		sign := lm.hash.Sign(buf.Bytes())
-		request.SetHeader("HashSHA256", sign)
+		request.SetHeader(_shaHeader, sign)
 	}
 
 	lm.AddRequest(request)

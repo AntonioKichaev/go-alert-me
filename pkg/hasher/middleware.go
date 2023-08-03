@@ -6,12 +6,14 @@ import (
 	"net/http"
 )
 
+const _shaHeader = "HashSHA256"
+
 func HasherMiddleware(key string) func(http.Handler) http.Handler {
 	h := NewHasher(key)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			originalWriter := w
-			sha := r.Header.Get("HashSHA256")
+			sha := r.Header.Get(_shaHeader)
 
 			if len(sha) != 0 {
 				buf, _ := io.ReadAll(r.Body)
@@ -53,6 +55,6 @@ func (crw *hashShaResponseWriter) Header() http.Header {
 	return crw.w.Header()
 }
 func (crw *hashShaResponseWriter) WriteHeader(statusCode int) {
-	crw.w.Header().Set("HashSHA256", crw.sign)
+	crw.w.Header().Set(_shaHeader, crw.sign)
 	crw.w.WriteHeader(statusCode)
 }
